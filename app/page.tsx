@@ -73,19 +73,33 @@ export default function ReleaseTrackerApp() {
 
   /* Add / Update */
   const saveRelease = () => {
-    if (!form.name || !form.date || !form.type) return;
+  if (!form.name || !form.date || !form.type) return;
 
-    if (editingRelease) {
-      setReleases(prev =>
-        prev.map(r => (r.id === editingRelease.id ? { ...editingRelease, ...form } : r))
-      );
-      setEditingRelease(null);
-    } else {
-      setReleases(prev => [...prev, { ...form, id: Date.now() }]);
-    }
+  const normalizedName = form.name.trim().toLowerCase();
 
-    setForm({ name: "", product: "", date: "", type: "" });
-  };
+  const duplicate = releases.some(r =>
+    r.name.trim().toLowerCase() === normalizedName &&
+    r.id !== editingRelease?.id
+  );
+
+  if (duplicate) {
+    alert("A release with this name already exists for this year.");
+    return;
+  }
+
+  if (editingRelease) {
+    setReleases(prev =>
+      prev.map(r =>
+        r.id === editingRelease.id ? { ...editingRelease, ...form } : r
+      )
+    );
+    setEditingRelease(null);
+  } else {
+    setReleases(prev => [...prev, { ...form, id: Date.now() }]);
+  }
+
+  setForm({ name: "", product: "", date: "", type: "" });
+};
 
   const deleteRelease = (id: number) => {
     if (!window.confirm("Are you sure you want to delete this release?")) return;
