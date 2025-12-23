@@ -73,10 +73,36 @@ export default function ReleaseTrackerApp() {
 
   /* Add / Update */
   const saveRelease = () => {
-  if (!form.name || !form.date || !form.type) return;
+  // ---- Mandatory field validation ----
+  if (!form.name.trim()) {
+    alert("Release Name is required.");
+    return;
+  }
 
+  if (!form.product.trim()) {
+    alert("Product / App is required.");
+    return;
+  }
+
+  if (!form.date) {
+    alert("Release Date is required.");
+    return;
+  }
+
+  if (!form.type) {
+    alert("Release Type is required.");
+    return;
+  }
+
+  // ---- Year validation ----
+  const releaseYear = new Date(form.date).getFullYear();
+  if (releaseYear !== selectedYear) {
+    alert(`Release Date must be within the selected year (${selectedYear}).`);
+    return;
+  }
+
+  // ---- Duplicate name validation (existing) ----
   const normalizedName = form.name.trim().toLowerCase();
-
   const duplicate = releases.some(r =>
     r.name.trim().toLowerCase() === normalizedName &&
     r.id !== editingRelease?.id
@@ -87,6 +113,7 @@ export default function ReleaseTrackerApp() {
     return;
   }
 
+  // ---- Save logic (unchanged) ----
   if (editingRelease) {
     setReleases(prev =>
       prev.map(r =>
@@ -100,6 +127,7 @@ export default function ReleaseTrackerApp() {
 
   setForm({ name: "", product: "", date: "", type: "" });
 };
+
 
   const deleteRelease = (id: number) => {
     if (!window.confirm("Are you sure you want to delete this release?")) return;
