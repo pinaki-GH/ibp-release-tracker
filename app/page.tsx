@@ -169,7 +169,19 @@ export default function ReleaseTrackerApp() {
     link.download = `IBP_Release_Tracker_${selectedYear}.csv`;
     link.click();
   };
+   
+/* ======================
+     FORM HELPERS (NEW)
+     ====================== */
+  const clearForm = () => {
+    setForm({ name: "", product: "", date: "", type: "" });
+  };
 
+  const discardEdit = () => {
+    setEditingRelease(null);
+    setForm({ name: "", product: "", date: "", type: "" });
+  };
+   
   /* ======================
      EXECUTIVE SUMMARY DATA
      ====================== */
@@ -226,7 +238,16 @@ export default function ReleaseTrackerApp() {
           </div>
 
           {/* Add / Edit */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginBottom: 24 }}>
+          <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "2fr 2fr 1.2fr 1.5fr 1fr 1fr",
+    gap: 8,
+    marginBottom: 24,
+    alignItems: "center"
+  }}
+>
+
             <input placeholder="Release Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
             <input placeholder="Product / App" value={form.product} onChange={e => setForm({ ...form, product: e.target.value })} />
             <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
@@ -234,7 +255,26 @@ export default function ReleaseTrackerApp() {
               <option value="">Release Type</option>
               {releaseTypes.map(rt => <option key={rt.id} value={rt.id}>{rt.name}</option>)}
             </select>
-            <button onClick={saveRelease}>{editingRelease ? "Update" : "Add"}</button>
+            <button onClick={saveRelease}>
+  {editingRelease ? "Update" : "Add"}
+</button>
+
+{editingRelease ? (
+  <button
+    onClick={discardEdit}
+    style={{ background: "#f3f4f6" }}
+  >
+    Discard
+  </button>
+) : (
+  <button
+    onClick={clearForm}
+    style={{ background: "#f3f4f6" }}
+  >
+    Clear
+  </button>
+)}
+
           </div>
 
           {/* Legend */}
