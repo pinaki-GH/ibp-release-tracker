@@ -384,6 +384,85 @@ export default function ReleaseTrackerApp() {
               </div>
             ))}
           </div>
+           {/* =====================
+   PRODUCT RELEASE MIX
+   ===================== */}
+<h2 style={{ marginTop: 32 }}>Product Release Mix</h2>
+
+{(() => {
+  const products = Array.from(new Set(baseFiltered.map(r => r.product)));
+
+  return products.map(product => {
+    const productReleases = baseFiltered.filter(r => r.product === product);
+    const total = productReleases.length;
+
+    if (total === 0) return null;
+
+    const byType = releaseTypes
+      .map(rt => {
+        const count = productReleases.filter(r => r.type === rt.id).length;
+        const percent = Math.round((count / total) * 100);
+        return { ...rt, count, percent };
+      })
+      .filter(t => t.count > 0);
+
+    return (
+      <div
+        key={product}
+        style={{
+          border: "1px solid #ccc",
+          padding: 12,
+          marginBottom: 12
+        }}
+      >
+        <strong>{product}</strong>
+        <div style={{ fontSize: 12, marginBottom: 6 }}>
+          Total Releases: {total}
+        </div>
+
+        {/* Stacked bar */}
+        <div
+          style={{
+            display: "flex",
+            height: 16,
+            width: "100%",
+            border: "1px solid #ddd",
+            overflow: "hidden"
+          }}
+        >
+          {byType.map(t => (
+            <div
+              key={t.id}
+              title={`${t.name}: ${t.count} (${t.percent}%)`}
+              style={{
+                width: `${t.percent}%`,
+                background: t.color
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Legend */}
+        <div style={{ fontSize: 12, marginTop: 6 }}>
+          {byType.map(t => (
+            <span key={t.id} style={{ marginRight: 12 }}>
+              <span
+                style={{
+                  display: "inline-block",
+                  width: 10,
+                  height: 10,
+                  background: t.color,
+                  marginRight: 4
+                }}
+              />
+              {t.name}: {t.count} ({t.percent}%)
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  });
+})()}
         </>
       )}
     </div>
