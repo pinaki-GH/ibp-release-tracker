@@ -290,25 +290,44 @@ export default function ReleaseTrackerApp() {
           </div>
 
           {/* Legend */}
-          <div style={{ marginBottom: 16 }}>
-            <strong>Release Type Legend — Total releases: {totalYearCount}</strong>
-            <button onClick={() => setTypeFilter([])} style={{ marginLeft: 12 }}>
-              Clear Release Type Filter
-            </button>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
-              {releaseTypes.map(rt => (
-                <button
-                  key={rt.id}
-                  onClick={() =>
-                    setTypeFilter(p => (p.includes(rt.id) ? p.filter(t => t !== rt.id) : [...p, rt.id]))
-                  }
-                  style={{ background: rt.color, color: getContrastingTextColor(rt.color), padding: "4px 8px", border: "1px solid #ccc" }}
-                >
-                  {rt.name} ({releaseTypeCounts[rt.id] || 0})
-                </button>
-              ))}
-            </div>
-          </div>
+<div style={{ marginBottom: 16 }}>
+  <strong>
+    Release Type Legend — Total releases:{" "}
+    {typeFilter.length > 0 ? filteredReleases.length : totalYearCount}
+  </strong>
+
+  <button onClick={() => setTypeFilter([])} style={{ marginLeft: 12 }}>
+    Clear Release Type Filter
+  </button>
+
+  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+    {releaseTypes.map(rt => {
+      const isSelected = typeFilter.includes(rt.id);
+
+      return (
+        <button
+          key={rt.id}
+          onClick={() =>
+            setTypeFilter(p =>
+              p.includes(rt.id) ? p.filter(t => t !== rt.id) : [...p, rt.id]
+            )
+          }
+          style={{
+            background: rt.color,
+            color: getContrastingTextColor(rt.color),
+            padding: "4px 8px",
+            border: isSelected ? "3px solid #000" : "1px solid #ccc",
+            boxShadow: isSelected ? "0 0 0 2px rgba(0,0,0,0.15)" : "none",
+            transform: isSelected ? "scale(1.05)" : "scale(1)",
+            transition: "all 0.15s ease"
+          }}
+        >
+          {rt.name} ({releaseTypeCounts[rt.id] || 0})
+        </button>
+      );
+    })}
+  </div>
+</div>
 
           {/* Filters */}
           <div style={{ marginBottom: 24, display: "flex", gap: 8 }}>
