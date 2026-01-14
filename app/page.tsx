@@ -292,9 +292,8 @@ export default function ReleaseTrackerApp() {
           {/* Legend */}
 <div style={{ marginBottom: 16 }}>
   <strong>
-    Release Type Legend — Total releases:{" "}
-    {typeFilter.length > 0 ? filteredReleases.length : totalYearCount}
-  </strong>
+  Release Type Legend — Total releases: {totalYearCount}
+</strong>
 
   <button onClick={() => setTypeFilter([])} style={{ marginLeft: 12 }}>
     Clear Release Type Filter
