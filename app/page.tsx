@@ -6,14 +6,14 @@ import { useState, useEffect } from "react";
    Static reference data
 ------------------------------ */
 const releaseTypes = [
-  { id: "new-feature", name: "New Feature", color: "#DBEAFE" },
-  { id: "enhancement", name: "Enhancement", color: "#E0E7FF" },
-  { id: "bug-fix", name: "Bug Fix", color: "#FEE2E2" },
-  { id: "dap-migration", name: "DAP Migration", color: "#F3E8FF" },
-  { id: "retirement", name: "Retirement", color: "#E5E7EB" },
-  { id: "platform-req", name: "Platform Requirement", color: "#CCFBF1" },
-  { id: "technical-debt", name: "Technical Debt", color: "#FEF9C3" },
-  { id: "planned", name: "Planned", color: "#DCFCE7" }
+  { id: "new-feature", name: "New Feature", color: "#2563EB" },
+  { id: "enhancement", name: "Enhancement", color: "#7C3AED" },
+  { id: "bug-fix", name: "Bug Fix", color: "#DC2626" },
+  { id: "dap-migration", name: "DAP Migration", color: "#0D9488" },
+  { id: "retirement", name: "Retirement", color: "#374151" },
+  { id: "platform-req", name: "Platform Requirement", color: "#F59E0B" },
+  { id: "technical-debt", name: "Technical Debt", color: "#9333EA" },
+  { id: "planned", name: "Planned", color: "#16A34A" }
 ];
 
 const MONTHS = [
@@ -28,6 +28,18 @@ interface ReleaseItem {
   date: string;
   type: string;
 }
+
+/* ======================
+   AUTO TEXT CONTRAST
+   ====================== */
+const getContrastingTextColor = (bgColor: string) => {
+  const hex = bgColor.replace("#", "");
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  return brightness > 160 ? "#000000" : "#FFFFFF";
+};
 
 export default function ReleaseTrackerApp() {
   const currentYear = new Date().getFullYear();
@@ -290,7 +302,7 @@ export default function ReleaseTrackerApp() {
                   onClick={() =>
                     setTypeFilter(p => (p.includes(rt.id) ? p.filter(t => t !== rt.id) : [...p, rt.id]))
                   }
-                  style={{ background: rt.color, padding: "4px 8px", border: "1px solid #ccc" }}
+                  style={{ background: rt.color, color: getContrastingTextColor(rt.color), padding: "4px 8px", border: "1px solid #ccc" }}
                 >
                   {rt.name} ({releaseTypeCounts[rt.id] || 0})
                 </button>
@@ -316,7 +328,7 @@ export default function ReleaseTrackerApp() {
               {filteredReleases.map(r => {
                 const rt = releaseTypes.find(t => t.id === r.type);
                 return (
-                  <div key={r.id} style={{ background: rt?.color, padding: 8, marginTop: 6, border: "1px solid #ccc" }}>
+                  <div key={r.id} style={{ background: rt?.color, color: rt ? getContrastingTextColor(rt.color) : "#000", padding: 8, marginTop: 6, border: "1px solid #ccc" }}>
                     <strong>{r.name}</strong>
                     <div style={{ fontSize: 12 }}>{r.product} • {r.date} • {rt?.name}</div>
                     <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
@@ -335,7 +347,7 @@ export default function ReleaseTrackerApp() {
                   {filteredReleases.filter(r => new Date(r.date).getMonth() === index).map(r => {
                     const rt = releaseTypes.find(t => t.id === r.type);
                     return (
-                      <div key={r.id} style={{ background: rt?.color, padding: 6, marginTop: 6 }}>
+                      <div key={r.id} style={{ background: rt?.color, color: rt ? getContrastingTextColor(rt.color) : "#000", padding: 6, marginTop: 6 }}>
                         <strong>{r.name}</strong>
                         <div style={{ fontSize: 12 }}>{r.product} • {r.date}</div>
                         <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
