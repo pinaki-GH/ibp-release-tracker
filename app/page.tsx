@@ -12,8 +12,12 @@ const releaseTypes = [
   { id: "dap-migration", name: "DAP Migration", color: "#0D9488" },
   { id: "retirement", name: "Retirement", color: "#374151" },
   { id: "platform-req", name: "Platform Requirement", color: "#F59E0B" },
-  { id: "technical-debt", name: "Technical Debt", color: "#9333EA" },
-  { id: "planned", name: "Planned", color: "#16A34A" }
+  { id: "technical-debt", name: "Technical Debt", color: "#9333EA" }
+];
+
+const releaseStatuses = [
+  { id: "planned", name: "Planned", color: "#9CA3AF" },
+  { id: "completed", name: "Completed", color: "#16A34A" }
 ];
 
 const MONTHS = [
@@ -27,6 +31,7 @@ interface ReleaseItem {
   product: string;
   date: string;
   type: string;
+  status: "planned" | "completed"; 
 }
 
 /* ======================
@@ -52,11 +57,13 @@ export default function ReleaseTrackerApp() {
     name: "",
     product: "",
     date: "",
-    type: ""
+    type: "",
+    status: "planned" as "planned" | "completed" 
   });
 
   const [productFilter, setProductFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<"planned" | "completed" | null>(null); 
   const [monthFilter, setMonthFilter] = useState<number | null>(null);
 
   /* ✅ NEW: View toggle */
@@ -137,7 +144,7 @@ export default function ReleaseTrackerApp() {
     setReleases(prev => [...prev, { ...form, id: Date.now() }]);
   }
 
-  setForm({ name: "", product: "", date: "", type: "" });
+  setForm({ name: "", product: "", date: "", type: "", status: "planned" });
 };
 
 
@@ -155,6 +162,7 @@ export default function ReleaseTrackerApp() {
 
   const filteredReleases = baseFiltered.filter(r => {
     if (typeFilter.length && !typeFilter.includes(r.type)) return false;
+    if (statusFilter && r.status !== statusFilter) return false; 
     if (monthFilter !== null && new Date(r.date).getMonth() !== monthFilter) return false;
     return true;
   });
@@ -186,12 +194,12 @@ export default function ReleaseTrackerApp() {
      FORM HELPERS (NEW)
      ====================== */
   const clearForm = () => {
-    setForm({ name: "", product: "", date: "", type: "" });
+    setForm({ name: "", product: "", date: "", type: "", status: "planned" });
   };
 
   const discardEdit = () => {
     setEditingRelease(null);
-    setForm({ name: "", product: "", date: "", type: "" });
+    setForm({ name: "", product: "", date: "", type: "", status: "planned" });
   };
    
   /* ======================
@@ -267,7 +275,14 @@ export default function ReleaseTrackerApp() {
               <option value="">Release Type</option>
               {releaseTypes.map(rt => <option key={rt.id} value={rt.id}>{rt.name}</option>)}
             </select>
-            <button onClick={saveRelease}>
+
+            <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value as any })}>
+              {releaseStatuses.map(rs => (
+               <option key={rs.id} value={rs.id}>{rs.name}</option>
+          ))}
+        </select>
+             
+             <button onClick={saveRelease}>
   {editingRelease ? "Update" : "Add"}
 </button>
 
@@ -328,6 +343,7 @@ export default function ReleaseTrackerApp() {
   </div>
 </div>
 
+
           {/* Filters */}
           <div style={{ marginBottom: 24, display: "flex", gap: 8 }}>
             <input placeholder="Filter by product" value={productFilter} onChange={e => setProductFilter(e.target.value)} />
@@ -339,7 +355,28 @@ export default function ReleaseTrackerApp() {
             {monthFilter !== null && <button onClick={() => setMonthFilter(null)}>Clear Month</button>}
           </div>
 
-          {/* Results */}
+           {/* Status Filter */}
+      <div style={{ marginBottom: 16 }}>
+        <strong>Release Status</strong>
+        <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+          {releaseStatuses.map(rs => (
+            <button
+              key={rs.id}
+              onClick={() => setStatusFilter(p => (p === rs.id ? null : (rs.id as "planned" | "completed")))}
+              style={{
+                background: rs.color,
+                color: "#fff",
+                border: statusFilter === rs.id ? "3px solid #000" : "1px solid #ccc",
+                padding: "4px 8px"
+              }}
+            >
+              {rs.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+         {/* Results */}
           {monthFilter !== null ? (
             <div>
               <h3>{MONTHS[monthFilter]} {selectedYear}</h3>
