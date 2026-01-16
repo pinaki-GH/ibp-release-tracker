@@ -180,20 +180,32 @@ export default function ReleaseTrackerApp() {
   const totalYearCount = baseFiltered.length;
 
   const exportYearToExcel = () => {
-    const header = "Release Name,Product,Date,Year,Month,Release Type\n";
-    const rows = baseFiltered.map(r => {
+  const header =
+    "Release Name,Product,Date,Year,Month,Release Type,Release Status\n";
+
+  const rows = baseFiltered
+    .map(r => {
       const d = new Date(r.date);
       const month = MONTHS[d.getMonth()];
-      const typeName = releaseTypes.find(t => t.id === r.type)?.name || r.type;
-      return `"${r.name}","${r.product}","${r.date}","${selectedYear}","${month}","${typeName}"`;
-    }).join("\n");
+      const typeName =
+        releaseTypes.find(t => t.id === r.type)?.name || r.type;
+      const statusName =
+        r.status === "completed" ? "Completed" : "Planned";
 
-    const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `IBP_Release_Tracker_${selectedYear}.csv`;
-    link.click();
-  };
+      return `"${r.name}","${r.product}","${r.date}","${selectedYear}","${month}","${typeName}","${statusName}"`;
+    })
+    .join("\n");
+
+  const blob = new Blob([header + rows], {
+    type: "text/csv;charset=utf-8;"
+  });
+
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `IBP_Release_Tracker_${selectedYear}.csv`;
+  link.click();
+};
+
    
 /* ======================
      FORM HELPERS (NEW)
