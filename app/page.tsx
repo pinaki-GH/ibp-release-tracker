@@ -12,7 +12,7 @@ const releaseTypes = [
   { id: "dap-migration", name: "DAP Migration", color: "#0D9488" },
   { id: "retirement", name: "Retirement", color: "#374151" },
   { id: "platform-req", name: "Platform Requirement", color: "#F59E0B" },
-  { id: "technical-debt", name: "Technical Debt", color: "#9334EA" }
+  { id: "technical-debt", name: "Technical Debt", color: "#374151" }
 ];
 
 const releaseStatuses = [
