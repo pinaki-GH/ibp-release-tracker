@@ -918,6 +918,198 @@ export default function ReleaseTrackerApp() {
             })}
           </div>
 
+{/* =====================
+   DELIVERY EFFICIENCY
+   ===================== */}
+<h2 style={{ marginTop: 32 }}>
+  Delivery Efficiency
+</h2>
+
+{(() => {
+  const completedReleases = baseFiltered.filter(
+    r => r.status === "completed"
+  );
+
+  const plannedReleases = baseFiltered.filter(
+    r => r.status === "planned"
+  );
+
+  const onTimeReleases = completedReleases.filter(r => {
+    if (!r.actualDate) return false;
+
+    return (
+      new Date(r.actualDate).getTime() <=
+      new Date(r.plannedDate).getTime()
+    );
+  });
+
+  const delayedReleases = completedReleases.filter(r => {
+    if (!r.actualDate) return false;
+
+    return (
+      new Date(r.actualDate).getTime() >
+      new Date(r.plannedDate).getTime()
+    );
+  });
+
+  const completionRate = totalYearCount
+    ? Math.round((completedReleases.length / totalYearCount) * 100)
+    : 0;
+
+  const onTimeRate = completedReleases.length
+    ? Math.round(
+        (onTimeReleases.length / completedReleases.length) * 100
+      )
+    : 0;
+
+  const getMetricColor = (value: number) => {
+    if (value >= 85) return "#16A34A";
+    if (value >= 70) return "#F59E0B";
+    return "#DC2626";
+  };
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(4, 1fr)",
+        gap: 16,
+        marginTop: 16,
+        marginBottom: 32
+      }}
+    >
+      <div
+        style={{
+          border: "1px solid #ccc",
+          padding: 16,
+          borderRadius: 8
+        }}
+      >
+        <div
+          style={{
+            fontSize: 12,
+            color: "#6B7280",
+            marginBottom: 8
+          }}
+        >
+          Completion Rate
+        </div>
+
+        <div
+          style={{
+            fontSize: 32,
+            fontWeight: "bold",
+            color: getMetricColor(completionRate)
+          }}
+        >
+          {completionRate}%
+        </div>
+
+        <div style={{ fontSize: 12, marginTop: 8 }}>
+          {completedReleases.length} completed out of {totalYearCount}
+        </div>
+      </div>
+
+      <div
+        style={{
+          border: "1px solid #ccc",
+          padding: 16,
+          borderRadius: 8
+        }}
+      >
+        <div
+          style={{
+            fontSize: 12,
+            color: "#6B7280",
+            marginBottom: 8
+          }}
+        >
+          On-Time Delivery
+        </div>
+
+        <div
+          style={{
+            fontSize: 32,
+            fontWeight: "bold",
+            color: getMetricColor(onTimeRate)
+          }}
+        >
+          {onTimeRate}%
+        </div>
+
+        <div style={{ fontSize: 12, marginTop: 8 }}>
+          {onTimeReleases.length} on time out of {completedReleases.length}
+        </div>
+      </div>
+
+      <div
+        style={{
+          border: "1px solid #ccc",
+          padding: 16,
+          borderRadius: 8
+        }}
+      >
+        <div
+          style={{
+            fontSize: 12,
+            color: "#6B7280",
+            marginBottom: 8
+          }}
+        >
+          Delayed Releases
+        </div>
+
+        <div
+          style={{
+            fontSize: 32,
+            fontWeight: "bold",
+            color: delayedReleases.length > 0 ? "#DC2626" : "#16A34A"
+          }}
+        >
+          {delayedReleases.length}
+        </div>
+
+        <div style={{ fontSize: 12, marginTop: 8 }}>
+          Completed after planned date
+        </div>
+      </div>
+
+      <div
+        style={{
+          border: "1px solid #ccc",
+          padding: 16,
+          borderRadius: 8
+        }}
+      >
+        <div
+          style={{
+            fontSize: 12,
+            color: "#6B7280",
+            marginBottom: 8
+          }}
+        >
+          Pending Releases
+        </div>
+
+        <div
+          style={{
+            fontSize: 32,
+            fontWeight: "bold",
+            color: plannedReleases.length > 0 ? "#F59E0B" : "#16A34A"
+          }}
+        >
+          {plannedReleases.length}
+        </div>
+
+        <div style={{ fontSize: 12, marginTop: 8 }}>
+          Releases still in planned status
+        </div>
+      </div>
+    </div>
+  );
+})()}
+
+           
           {/* =====================
              PRODUCT RELEASE MIX
              ===================== */}
