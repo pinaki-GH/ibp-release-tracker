@@ -926,23 +926,61 @@ export default function ReleaseTrackerApp() {
 </h2>
 
 {(() => {
-  const completedReleases = baseFiltered.filter(
+  const today = new Date();
+
+  /* =====================
+     VALID RELEASES FOR KPI
+     Include:
+     - Completed releases
+     - Planned releases where
+       planned date <= today
+     ===================== */
+  const validReleases = baseFiltered.filter(r => {
+    const comparisonDate = new Date(
+      r.actualDate || r.plannedDate
+    );
+
+    return comparisonDate <= today;
+  });
+
+  const completedReleases = validReleases.filter(
     r => r.status === "completed"
   );
 
-  const plannedReleases = baseFiltered.filter(
+  const plannedReleases = validReleases.filter(
     r => r.status === "planned"
   );
 
+  /* =====================
+     ON-TIME RELEASES
+     actual date = planned date
+     ===================== */
   const onTimeReleases = completedReleases.filter(r => {
     if (!r.actualDate) return false;
 
     return (
-      new Date(r.actualDate).getTime() <=
+      new Date(r.actualDate).getTime() ===
       new Date(r.plannedDate).getTime()
     );
   });
 
+  /* =====================
+     BEFORE-TIME RELEASES
+     actual date < planned date
+     ===================== */
+  const beforeTimeReleases = completedReleases.filter(r => {
+    if (!r.actualDate) return false;
+
+    return (
+      new Date(r.actualDate).getTime() <
+      new Date(r.plannedDate).getTime()
+    );
+  });
+
+  /* =====================
+     DELAYED RELEASES
+     actual date > planned date
+     ===================== */
   const delayedReleases = completedReleases.filter(r => {
     if (!r.actualDate) return false;
 
@@ -952,13 +990,26 @@ export default function ReleaseTrackerApp() {
     );
   });
 
-  const completionRate = totalYearCount
-    ? Math.round((completedReleases.length / totalYearCount) * 100)
+  /* =====================
+     COMPLETION RATE
+     ===================== */
+  const completionRate = validReleases.length
+    ? Math.round(
+        (completedReleases.length / validReleases.length) * 100
+      )
     : 0;
+
+  /* =====================
+     ON-TIME RATE
+     before-time also counts
+     as successful delivery
+     ===================== */
+  const successfulDeliveries =
+    onTimeReleases.length + beforeTimeReleases.length;
 
   const onTimeRate = completedReleases.length
     ? Math.round(
-        (onTimeReleases.length / completedReleases.length) * 100
+        (successfulDeliveries / completedReleases.length) * 100
       )
     : 0;
 
@@ -972,12 +1023,13 @@ export default function ReleaseTrackerApp() {
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "repeat(4, 1fr)",
+        gridTemplateColumns: "repeat(5, 1fr)",
         gap: 16,
         marginTop: 16,
         marginBottom: 32
       }}
     >
+      {/* Completion Rate */}
       <div
         style={{
           border: "1px solid #ccc",
@@ -1006,10 +1058,11 @@ export default function ReleaseTrackerApp() {
         </div>
 
         <div style={{ fontSize: 12, marginTop: 8 }}>
-          {completedReleases.length} completed out of {totalYearCount}
+          {completedReleases.length} completed out of {validReleases.length}
         </div>
       </div>
 
+      {/* On-Time Delivery */}
       <div
         style={{
           border: "1px solid #ccc",
@@ -1038,10 +1091,47 @@ export default function ReleaseTrackerApp() {
         </div>
 
         <div style={{ fontSize: 12, marginTop: 8 }}>
-          {onTimeReleases.length} on time out of {completedReleases.length}
+          {successfulDeliveries} successful out of {completedReleases.length}
         </div>
       </div>
 
+      {/* Before-Time Releases */}
+      <div
+        style={{
+          border: "1px solid #ccc",
+          padding: 16,
+          borderRadius: 8
+        }}
+      >
+        <div
+          style={{
+            fontSize: 12,
+            color: "#6B7280",
+            marginBottom: 8
+          }}
+        >
+          Before-Time Releases
+        </div>
+
+        <div
+          style={{
+            fontSize: 32,
+            fontWeight: "bold",
+            color:
+              beforeTimeReleases.length > 0
+                ? "#16A34A"
+                : "#6B7280"
+          }}
+        >
+          {beforeTimeReleases.length}
+        </div>
+
+        <div style={{ fontSize: 12, marginTop: 8 }}>
+          Completed before planned date
+        </div>
+      </div>
+
+      {/* Delayed Releases */}
       <div
         style={{
           border: "1px solid #ccc",
@@ -1063,7 +1153,10 @@ export default function ReleaseTrackerApp() {
           style={{
             fontSize: 32,
             fontWeight: "bold",
-            color: delayedReleases.length > 0 ? "#DC2626" : "#16A34A"
+            color:
+              delayedReleases.length > 0
+                ? "#DC2626"
+                : "#16A34A"
           }}
         >
           {delayedReleases.length}
@@ -1074,6 +1167,7 @@ export default function ReleaseTrackerApp() {
         </div>
       </div>
 
+      {/* Pending Releases */}
       <div
         style={{
           border: "1px solid #ccc",
@@ -1095,14 +1189,17 @@ export default function ReleaseTrackerApp() {
           style={{
             fontSize: 32,
             fontWeight: "bold",
-            color: plannedReleases.length > 0 ? "#F59E0B" : "#16A34A"
+            color:
+              plannedReleases.length > 0
+                ? "#F59E0B"
+                : "#16A34A"
           }}
         >
           {plannedReleases.length}
         </div>
 
         <div style={{ fontSize: 12, marginTop: 8 }}>
-          Releases in planned status
+          Releases still in planned status
         </div>
       </div>
     </div>
