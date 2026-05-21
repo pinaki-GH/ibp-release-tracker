@@ -1102,7 +1102,7 @@ export default function ReleaseTrackerApp() {
         </div>
 
         <div style={{ fontSize: 12, marginTop: 8 }}>
-          Releases still in planned status
+          Releases in planned status
         </div>
       </div>
     </div>
