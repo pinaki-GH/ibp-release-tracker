@@ -346,72 +346,119 @@ export default function ReleaseTrackerApp() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "2fr 2fr 1.2fr 1.2fr 1.5fr 1fr 1fr",
-              gap: 8,
-              marginBottom: 24,
-              alignItems: "center"
+              gridTemplateColumns: "repeat(5, 1fr)",
+              gap: 16,
+              marginBottom: 16
             }}
           >
-            <input
-              placeholder="Release Name"
-              value={form.name}
-              onChange={e => setForm({ ...form, name: e.target.value })}
-            />
+            <div>
+              <div style={{ fontSize: 12, marginBottom: 4 }}>
+                Release Name
+              </div>
+              <input
+                placeholder="Release Name"
+                value={form.name}
+                onChange={e => setForm({ ...form, name: e.target.value })}
+                style={{ width: "100%" }}
+              />
+            </div>
 
-            <input
-              placeholder="Product / App"
-              value={form.product}
-              onChange={e => setForm({ ...form, product: e.target.value })}
-            />
+            <div>
+              <div style={{ fontSize: 12, marginBottom: 4 }}>
+                Product / App
+              </div>
+              <input
+                placeholder="Product / App"
+                value={form.product}
+                onChange={e => setForm({ ...form, product: e.target.value })}
+                style={{ width: "100%" }}
+              />
+            </div>
 
-            <input
-              type="date"
-              value={form.plannedDate}
-              onChange={e =>
-                setForm({ ...form, plannedDate: e.target.value })
-              }
-            />
+            <div>
+              <div style={{ fontSize: 12, marginBottom: 4 }}>
+                Planned Release Date
+              </div>
+              <input
+                type="date"
+                value={form.plannedDate}
+                onChange={e =>
+                  setForm({ ...form, plannedDate: e.target.value })
+                }
+                style={{ width: "100%" }}
+              />
+            </div>
 
-            {form.status === "completed" ? (
+            <div>
+              <div style={{ fontSize: 12, marginBottom: 4 }}>
+                Release Type
+              </div>
+              <select
+                value={form.type}
+                onChange={e => setForm({ ...form, type: e.target.value })}
+                style={{ width: "100%" }}
+              >
+                <option value="">Release Type</option>
+                {releaseTypes.map(rt => (
+                  <option key={rt.id} value={rt.id}>
+                    {rt.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <div style={{ fontSize: 12, marginBottom: 4 }}>
+                Release Status
+              </div>
+              <select
+                value={form.status}
+                onChange={e =>
+                  setForm({
+                    ...form,
+                    status: e.target.value as "planned" | "completed"
+                  })
+                }
+                style={{ width: "100%" }}
+              >
+                {releaseStatuses.map(rs => (
+                  <option key={rs.id} value={rs.id}>
+                    {rs.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {form.status === "completed" && (
+            <div
+              style={{
+                marginBottom: 16,
+                maxWidth: 240
+              }}
+            >
+              <div style={{ fontSize: 12, marginBottom: 4 }}>
+                Actual Release Date
+              </div>
+
               <input
                 type="date"
                 value={form.actualDate}
                 onChange={e =>
                   setForm({ ...form, actualDate: e.target.value })
                 }
+                style={{ width: "100%" }}
               />
-            ) : (
-              <div />
-            )}
+            </div>
+          )}
 
-            <select
-              value={form.type}
-              onChange={e => setForm({ ...form, type: e.target.value })}
-            >
-              <option value="">Release Type</option>
-              {releaseTypes.map(rt => (
-                <option key={rt.id} value={rt.id}>
-                  {rt.name}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={form.status}
-              onChange={e =>
-                setForm({
-                  ...form,
-                  status: e.target.value as "planned" | "completed"
-                })
-              }
-            >
-              {releaseStatuses.map(rs => (
-                <option key={rs.id} value={rs.id}>
-                  {rs.name}
-                </option>
-              ))}
-            </select>
-
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              marginBottom: 24
+            }}
+          >
             <button onClick={saveRelease}>
               {editingRelease ? "Update" : "Add"}
             </button>
