@@ -947,9 +947,11 @@ export default function ReleaseTrackerApp() {
     r => r.status === "completed"
   );
 
-  const plannedReleases = validReleases.filter(
-    r => r.status === "planned"
-  );
+  const plannedReleases = baseFiltered.filter(r => {
+  if (r.status !== "planned") return false;
+
+  return new Date(r.plannedDate) <= today;
+  });
 
   /* =====================
      ON-TIME RELEASES
