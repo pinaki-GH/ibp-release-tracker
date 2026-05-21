@@ -29,9 +29,10 @@ interface ReleaseItem {
   id: number;
   name: string;
   product: string;
-  date: string;
+  plannedDate: string;
+  actualDate?: string;
   type: string;
-  status: "planned" | "completed"; 
+  status: "planned" | "completed";
 }
 
 /* ======================
@@ -56,39 +57,44 @@ export default function ReleaseTrackerApp() {
   const [form, setForm] = useState({
     name: "",
     product: "",
-    date: "",
+    plannedDate: "",
+    actualDate: "",
     type: "",
-    status: "planned" as "planned" | "completed" 
+    status: "planned" as "planned" | "completed"
   });
 
   const [productFilter, setProductFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState<"planned" | "completed" | null>(null); 
+  const [statusFilter, setStatusFilter] = useState<"planned" | "completed" | null>(null);
   const [monthFilter, setMonthFilter] = useState<number | null>(null);
 
-  /* ✅ NEW: View toggle */
   const [viewMode, setViewMode] = useState<"tracker" | "executive">("tracker");
 
   const storageKey = `releaseTracker:${selectedYear}`;
 
   /* Load data */
   useEffect(() => {
-  const stored = localStorage.getItem(storageKey);
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored) as any[];
-      const normalized: ReleaseItem[] = parsed.map(r => ({
-        ...r,
-        status: r.status ?? "planned" // ✅ default
-      }));
-      setReleases(normalized);
-    } catch {
+    const stored = localStorage.getItem(storageKey);
+
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as any[];
+
+        const normalized: ReleaseItem[] = parsed.map(r => ({
+          ...r,
+          plannedDate: r.plannedDate ?? r.date ?? "",
+          actualDate: r.actualDate ?? "",
+          status: r.status ?? "planned"
+        }));
+
+        setReleases(normalized);
+      } catch {
+        setReleases([]);
+      }
+    } else {
       setReleases([]);
     }
-  } else {
-    setReleases([]);
-  }
-}, [storageKey]);
+  }, [storageKey]);
 
   /* Persist data */
   useEffect(() => {
@@ -97,61 +103,73 @@ export default function ReleaseTrackerApp() {
 
   /* Add / Update */
   const saveRelease = () => {
-  // ---- Mandatory field validation ----
-  if (!form.name.trim()) {
-    alert("Release Name is required.");
-    return;
-  }
+    if (!form.name.trim()) {
+      alert("Release Name is required.");
+      return;
+    }
 
-  if (!form.product.trim()) {
-    alert("Product / App is required.");
-    return;
-  }
+    if (!form.product.trim()) {
+      alert("Product / App is required.");
+      return;
+    }
 
-  if (!form.date) {
-    alert("Release Date is required.");
-    return;
-  }
+    if (!form.plannedDate) {
+      alert("Planned Release Date is required.");
+      return;
+    }
 
-  if (!form.type) {
-    alert("Release Type is required.");
-    return;
-  }
+    if (!form.type) {
+      alert("Release Type is required.");
+      return;
+    }
 
-  // ---- Year validation ----
-  const releaseYear = new Date(form.date).getFullYear();
-  if (releaseYear !== selectedYear) {
-    alert(`Release Date must be within the selected year (${selectedYear}).`);
-    return;
-  }
+    if (form.status === "completed" && !form.actualDate) {
+      alert("Actual Release Date is required for completed releases.");
+      return;
+    }
 
-  // ---- Duplicate name validation (existing) ----
-  const normalizedName = form.name.trim().toLowerCase();
-  const duplicate = releases.some(r =>
-    r.name.trim().toLowerCase() === normalizedName &&
-    r.id !== editingRelease?.id
-  );
+    const releaseYear = new Date(
+      form.actualDate || form.plannedDate
+    ).getFullYear();
 
-  if (duplicate) {
-    alert("A release with this name already exists for this year.");
-    return;
-  }
+    if (releaseYear !== selectedYear) {
+      alert(`Release Date must be within the selected year (${selectedYear}).`);
+      return;
+    }
 
-  // ---- Save logic (unchanged) ----
-  if (editingRelease) {
-    setReleases(prev =>
-      prev.map(r =>
-        r.id === editingRelease.id ? { ...editingRelease, ...form } : r
-      )
+    const normalizedName = form.name.trim().toLowerCase();
+
+    const duplicate = releases.some(r =>
+      r.name.trim().toLowerCase() === normalizedName &&
+      r.id !== editingRelease?.id
     );
-    setEditingRelease(null);
-  } else {
-    setReleases(prev => [...prev, { ...form, id: Date.now() }]);
-  }
 
-  setForm({ name: "", product: "", date: "", type: "", status: "planned" });
-};
+    if (duplicate) {
+      alert("A release with this name already exists for this year.");
+      return;
+    }
 
+    if (editingRelease) {
+      setReleases(prev =>
+        prev.map(r =>
+          r.id === editingRelease.id ? { ...editingRelease, ...form } : r
+        )
+      );
+
+      setEditingRelease(null);
+    } else {
+      setReleases(prev => [...prev, { ...form, id: Date.now() }]);
+    }
+
+    setForm({
+      name: "",
+      product: "",
+      plannedDate: "",
+      actualDate: "",
+      type: "",
+      status: "planned"
+    });
+  };
 
   const deleteRelease = (id: number) => {
     if (!window.confirm("Are you sure you want to delete this release?")) return;
@@ -160,17 +178,32 @@ export default function ReleaseTrackerApp() {
 
   /* Filtering */
   const baseFiltered = releases.filter(r => {
-    if (new Date(r.date).getFullYear() !== selectedYear) return false;
-    if (productFilter && !r.product.toLowerCase().includes(productFilter.toLowerCase())) return false;
+    const effectiveDate = r.actualDate || r.plannedDate;
+
+    if (new Date(effectiveDate).getFullYear() !== selectedYear) return false;
+
+    if (
+      productFilter &&
+      !r.product.toLowerCase().includes(productFilter.toLowerCase())
+    ) return false;
+
     return true;
   });
 
   const filteredReleases = baseFiltered.filter(r => {
-  if (typeFilter.length && !typeFilter.includes(r.type)) return false;
-  if (monthFilter !== null && new Date(r.date).getMonth() !== monthFilter) return false;
-  if (statusFilter && (r.status ?? "planned") !== statusFilter) return false;
-  return true;
-});
+    const effectiveDate = r.actualDate || r.plannedDate;
+
+    if (typeFilter.length && !typeFilter.includes(r.type)) return false;
+
+    if (
+      monthFilter !== null &&
+      new Date(effectiveDate).getMonth() !== monthFilter
+    ) return false;
+
+    if (statusFilter && (r.status ?? "planned") !== statusFilter) return false;
+
+    return true;
+  });
 
   const releaseTypeCounts = baseFiltered.reduce<Record<string, number>>((acc, r) => {
     acc[r.type] = (acc[r.type] || 0) + 1;
@@ -180,55 +213,75 @@ export default function ReleaseTrackerApp() {
   const totalYearCount = baseFiltered.length;
 
   const exportYearToExcel = () => {
-  const header =
-    "Release Name,Product,Date,Year,Month,Release Type,Release Status\n";
+    const header =
+      "Release Name,Product,Planned Release Date,Actual Release Date,Year,Month,Release Type,Release Status\n";
 
-  const rows = baseFiltered
-    .map(r => {
-      const d = new Date(r.date);
-      const month = MONTHS[d.getMonth()];
-      const typeName =
-        releaseTypes.find(t => t.id === r.type)?.name || r.type;
-      const statusName =
-        r.status === "completed" ? "Completed" : "Planned";
+    const rows = baseFiltered
+      .map(r => {
+        const effectiveDate = r.actualDate || r.plannedDate;
+        const d = new Date(effectiveDate);
 
-      return `"${r.name}","${r.product}","${r.date}","${selectedYear}","${month}","${typeName}","${statusName}"`;
-    })
-    .join("\n");
+        const month = MONTHS[d.getMonth()];
 
-  const blob = new Blob([header + rows], {
-    type: "text/csv;charset=utf-8;"
-  });
+        const typeName =
+          releaseTypes.find(t => t.id === r.type)?.name || r.type;
 
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `IBP_Release_Tracker_${selectedYear}.csv`;
-  link.click();
-};
+        const statusName =
+          r.status === "completed" ? "Completed" : "Planned";
 
-   
-/* ======================
-     FORM HELPERS (NEW)
-     ====================== */
+        return `"${r.name}","${r.product}","${r.plannedDate}","${r.actualDate ?? ""}","${selectedYear}","${month}","${typeName}","${statusName}"`;
+      })
+      .join("\n");
+
+    const blob = new Blob([header + rows], {
+      type: "text/csv;charset=utf-8;"
+    });
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `IBP_Release_Tracker_${selectedYear}.csv`;
+    link.click();
+  };
+
   const clearForm = () => {
-    setForm({ name: "", product: "", date: "", type: "", status: "planned" });
+    setForm({
+      name: "",
+      product: "",
+      plannedDate: "",
+      actualDate: "",
+      type: "",
+      status: "planned"
+    });
   };
 
   const discardEdit = () => {
     setEditingRelease(null);
-    setForm({ name: "", product: "", date: "", type: "", status: "planned" });
+
+    setForm({
+      name: "",
+      product: "",
+      plannedDate: "",
+      actualDate: "",
+      type: "",
+      status: "planned"
+    });
   };
-   
+
   /* ======================
      EXECUTIVE SUMMARY DATA
      ====================== */
   const executiveSummary = MONTHS.map((month, idx) => {
-    const items = baseFiltered.filter(r => new Date(r.date).getMonth() === idx);
+    const items = baseFiltered.filter(r => {
+      const effectiveDate = r.actualDate || r.plannedDate;
+      return new Date(effectiveDate).getMonth() === idx;
+    });
+
     const total = items.length;
 
     const byType = releaseTypes
       .map(rt => {
         const count = items.filter(r => r.type === rt.id).length;
+
         return {
           ...rt,
           count,
@@ -246,9 +299,13 @@ export default function ReleaseTrackerApp() {
 
       {/* View Toggle */}
       <div style={{ marginBottom: 16 }}>
-        <button disabled={viewMode === "tracker"} onClick={() => setViewMode("tracker")}>
+        <button
+          disabled={viewMode === "tracker"}
+          onClick={() => setViewMode("tracker")}
+        >
           Tracker View
         </button>
+
         <button
           disabled={viewMode === "executive"}
           onClick={() => setViewMode("executive")}
@@ -258,177 +315,428 @@ export default function ReleaseTrackerApp() {
         </button>
       </div>
 
-      {/* =====================
-         TRACKER VIEW (INTACT)
-         ===================== */}
       {viewMode === "tracker" && (
         <>
           {/* Year + Export */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              marginBottom: 16
+            }}
+          >
             <strong>Year:</strong>
-            <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>
+
+            <select
+              value={selectedYear}
+              onChange={e => setSelectedYear(Number(e.target.value))}
+            >
               {[currentYear - 1, currentYear, currentYear + 1, currentYear + 2].map(y => (
                 <option key={y} value={y}>{y}</option>
               ))}
             </select>
-            <button onClick={exportYearToExcel}>Export Year to Excel</button>
+
+            <button onClick={exportYearToExcel}>
+              Export Year to Excel
+            </button>
           </div>
 
           {/* Add / Edit */}
           <div
-  style={{
-    display: "grid",
-    gridTemplateColumns: "2fr 2fr 1.2fr 1.5fr 1fr 1fr",
-    gap: 8,
-    marginBottom: 24,
-    alignItems: "center"
-  }}
->
+            style={{
+              display: "grid",
+              gridTemplateColumns: "2fr 2fr 1.2fr 1.2fr 1.5fr 1fr 1fr",
+              gap: 8,
+              marginBottom: 24,
+              alignItems: "center"
+            }}
+          >
+            <input
+              placeholder="Release Name"
+              value={form.name}
+              onChange={e => setForm({ ...form, name: e.target.value })}
+            />
 
-            <input placeholder="Release Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-            <input placeholder="Product / App" value={form.product} onChange={e => setForm({ ...form, product: e.target.value })} />
-            <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
-            <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
+            <input
+              placeholder="Product / App"
+              value={form.product}
+              onChange={e => setForm({ ...form, product: e.target.value })}
+            />
+
+            <input
+              type="date"
+              value={form.plannedDate}
+              onChange={e =>
+                setForm({ ...form, plannedDate: e.target.value })
+              }
+            />
+
+            {form.status === "completed" ? (
+              <input
+                type="date"
+                value={form.actualDate}
+                onChange={e =>
+                  setForm({ ...form, actualDate: e.target.value })
+                }
+              />
+            ) : (
+              <div />
+            )}
+
+            <select
+              value={form.type}
+              onChange={e => setForm({ ...form, type: e.target.value })}
+            >
               <option value="">Release Type</option>
-              {releaseTypes.map(rt => <option key={rt.id} value={rt.id}>{rt.name}</option>)}
+              {releaseTypes.map(rt => (
+                <option key={rt.id} value={rt.id}>
+                  {rt.name}
+                </option>
+              ))}
             </select>
 
-            <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value as any })}>
+            <select
+              value={form.status}
+              onChange={e =>
+                setForm({
+                  ...form,
+                  status: e.target.value as "planned" | "completed"
+                })
+              }
+            >
               {releaseStatuses.map(rs => (
-               <option key={rs.id} value={rs.id}>{rs.name}</option>
-          ))}
-        </select>
-             
-             <button onClick={saveRelease}>
-  {editingRelease ? "Update" : "Add"}
-</button>
+                <option key={rs.id} value={rs.id}>
+                  {rs.name}
+                </option>
+              ))}
+            </select>
 
-{editingRelease ? (
-  <button
-    onClick={discardEdit}
-    style={{ background: "#f3f4f6" }}
-  >
-    Discard
-  </button>
-) : (
-  <button
-    onClick={clearForm}
-    style={{ background: "#f3f4f6" }}
-  >
-    Clear
-  </button>
-)}
+            <button onClick={saveRelease}>
+              {editingRelease ? "Update" : "Add"}
+            </button>
 
+            {editingRelease ? (
+              <button
+                onClick={discardEdit}
+                style={{ background: "#f3f4f6" }}
+              >
+                Discard
+              </button>
+            ) : (
+              <button
+                onClick={clearForm}
+                style={{ background: "#f3f4f6" }}
+              >
+                Clear
+              </button>
+            )}
           </div>
 
           {/* Legend */}
-<div style={{ marginBottom: 16 }}>
-  <strong>
-  Release Type Legend — Total releases: {totalYearCount}
-</strong>
+          <div style={{ marginBottom: 16 }}>
+            <strong>
+              Release Type Legend — Total releases: {totalYearCount}
+            </strong>
 
-  <button onClick={() => setTypeFilter([])} style={{ marginLeft: 12 }}>
-    Clear Release Type Filter
-  </button>
-
-  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
-    {releaseTypes.map(rt => {
-      const isSelected = typeFilter.includes(rt.id);
-
-      return (
-        <button
-          key={rt.id}
-          onClick={() =>
-            setTypeFilter(p =>
-              p.includes(rt.id) ? p.filter(t => t !== rt.id) : [...p, rt.id]
-            )
-          }
-          style={{
-            background: rt.color,
-            color: getContrastingTextColor(rt.color),
-            padding: "4px 8px",
-            border: isSelected ? "3px solid #000" : "1px solid #ccc",
-            boxShadow: isSelected ? "0 0 0 2px rgba(0,0,0,0.15)" : "none",
-            transform: isSelected ? "scale(1.05)" : "scale(1)",
-            transition: "all 0.15s ease"
-          }}
-        >
-          {rt.name} ({releaseTypeCounts[rt.id] || 0})
-        </button>
-      );
-    })}
-  </div>
-</div>
-
-
-          {/* Filters */}
-          <div style={{ marginBottom: 24, display: "flex", gap: 8 }}>
-            <input placeholder="Filter by product" value={productFilter} onChange={e => setProductFilter(e.target.value)} />
-            {productFilter && <button onClick={() => setProductFilter("")}>×</button>}
-            <select value={monthFilter ?? ""} onChange={e => setMonthFilter(e.target.value ? Number(e.target.value) : null)}>
-              <option value="">Filter by month</option>
-              {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
-            </select>
-            {monthFilter !== null && <button onClick={() => setMonthFilter(null)}>Clear Month</button>}
-          </div>
-
-           {/* Status Filter */}
-      <div style={{ marginBottom: 16 }}>
-        <strong>Release Status</strong>
-        <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-          {releaseStatuses.map(rs => (
             <button
-              key={rs.id}
-              onClick={() => setStatusFilter(p => (p === rs.id ? null : (rs.id as "planned" | "completed")))}
+              onClick={() => setTypeFilter([])}
+              style={{ marginLeft: 12 }}
+            >
+              Clear Release Type Filter
+            </button>
+
+            <div
               style={{
-                background: rs.color,
-                color: "#fff",
-                border: statusFilter === rs.id ? "3px solid #000" : "1px solid #ccc",
-                padding: "4px 8px"
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+                marginTop: 8
               }}
             >
-              {rs.name}
-            </button>
-          ))}
-        </div>
-      </div>
+              {releaseTypes.map(rt => {
+                const isSelected = typeFilter.includes(rt.id);
 
-         {/* Results */}
+                return (
+                  <button
+                    key={rt.id}
+                    onClick={() =>
+                      setTypeFilter(p =>
+                        p.includes(rt.id)
+                          ? p.filter(t => t !== rt.id)
+                          : [...p, rt.id]
+                      )
+                    }
+                    style={{
+                      background: rt.color,
+                      color: getContrastingTextColor(rt.color),
+                      padding: "4px 8px",
+                      border: isSelected
+                        ? "3px solid #000"
+                        : "1px solid #ccc",
+                      boxShadow: isSelected
+                        ? "0 0 0 2px rgba(0,0,0,0.15)"
+                        : "none",
+                      transform: isSelected
+                        ? "scale(1.05)"
+                        : "scale(1)",
+                      transition: "all 0.15s ease"
+                    }}
+                  >
+                    {rt.name} ({releaseTypeCounts[rt.id] || 0})
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div
+            style={{
+              marginBottom: 24,
+              display: "flex",
+              gap: 8
+            }}
+          >
+            <input
+              placeholder="Filter by product"
+              value={productFilter}
+              onChange={e => setProductFilter(e.target.value)}
+            />
+
+            {productFilter && (
+              <button onClick={() => setProductFilter("")}>×</button>
+            )}
+
+            <select
+              value={monthFilter ?? ""}
+              onChange={e =>
+                setMonthFilter(
+                  e.target.value ? Number(e.target.value) : null
+                )
+              }
+            >
+              <option value="">Filter by month</option>
+
+              {MONTHS.map((m, i) => (
+                <option key={m} value={i}>{m}</option>
+              ))}
+            </select>
+
+            {monthFilter !== null && (
+              <button onClick={() => setMonthFilter(null)}>
+                Clear Month
+              </button>
+            )}
+          </div>
+
+          {/* Status Filter */}
+          <div style={{ marginBottom: 16 }}>
+            <strong>Release Status</strong>
+
+            <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+              {releaseStatuses.map(rs => (
+                <button
+                  key={rs.id}
+                  onClick={() =>
+                    setStatusFilter(p =>
+                      p === rs.id
+                        ? null
+                        : (rs.id as "planned" | "completed")
+                    )
+                  }
+                  style={{
+                    background: rs.color,
+                    color: "#fff",
+                    border:
+                      statusFilter === rs.id
+                        ? "3px solid #000"
+                        : "1px solid #ccc",
+                    padding: "4px 8px"
+                  }}
+                >
+                  {rs.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Results */}
           {monthFilter !== null ? (
             <div>
-              <h3>{MONTHS[monthFilter]} {selectedYear}</h3>
+              <h3>
+                {MONTHS[monthFilter]} {selectedYear}
+              </h3>
+
               {filteredReleases.map(r => {
                 const rt = releaseTypes.find(t => t.id === r.type);
+
                 return (
-                  <div key={r.id} style={{ background: rt?.color, color: rt ? getContrastingTextColor(rt.color) : "#000", padding: 8, marginTop: 6, border: "1px solid #ccc" }}>
+                  <div
+                    key={r.id}
+                    style={{
+                      background: rt?.color,
+                      color: rt
+                        ? getContrastingTextColor(rt.color)
+                        : "#000",
+                      padding: 8,
+                      marginTop: 6,
+                      border: "1px solid #ccc"
+                    }}
+                  >
                     <strong>{r.name}</strong>
-                    <div style={{ fontSize: 12 }}>{r.product} • {r.date} • {rt?.name}</div>
-                    <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                      <button style={{ fontSize: 12 }} onClick={() => { setEditingRelease(r); setForm(r); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Edit</button>
-                      <button style={{ fontSize: 12, color: "red" }} onClick={() => deleteRelease(r.id)}>Delete</button>
+
+                    <div style={{ fontSize: 12 }}>
+                      {r.product} • {rt?.name}
+                    </div>
+
+                    <div style={{ fontSize: 12 }}>
+                      Planned: {r.plannedDate}
+                    </div>
+
+                    {r.actualDate && (
+                      <div style={{ fontSize: 12 }}>
+                        Actual: {r.actualDate}
+                      </div>
+                    )}
+
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 8,
+                        marginTop: 4
+                      }}
+                    >
+                      <button
+                        style={{ fontSize: 12 }}
+                        onClick={() => {
+                          setEditingRelease(r);
+                          setForm({
+                            name: r.name,
+                            product: r.product,
+                            plannedDate: r.plannedDate,
+                            actualDate: r.actualDate || "",
+                            type: r.type,
+                            status: r.status
+                          });
+
+                          window.scrollTo({
+                            top: 0,
+                            behavior: "smooth"
+                          });
+                        }}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        style={{ fontSize: 12, color: "red" }}
+                        onClick={() => deleteRelease(r.id)}
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: 16
+              }}
+            >
               {MONTHS.map((month, index) => (
-                <div key={month} style={{ border: "1px solid #ccc", padding: 12 }}>
-                  <strong>{month} {selectedYear}</strong>
-                  {filteredReleases.filter(r => new Date(r.date).getMonth() === index).map(r => {
-                    const rt = releaseTypes.find(t => t.id === r.type);
-                    return (
-                      <div key={r.id} style={{ background: rt?.color, color: rt ? getContrastingTextColor(rt.color) : "#000", padding: 6, marginTop: 6 }}>
-                        <strong>{r.name}</strong>
-                        <div style={{ fontSize: 12 }}>{r.product} • {r.date}</div>
-                        <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                          <button style={{ fontSize: 12 }} onClick={() => { setEditingRelease(r); setForm(r); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Edit</button>
-                          <button style={{ fontSize: 12, color: "red" }} onClick={() => deleteRelease(r.id)}>Delete</button>
+                <div
+                  key={month}
+                  style={{ border: "1px solid #ccc", padding: 12 }}
+                >
+                  <strong>
+                    {month} {selectedYear}
+                  </strong>
+
+                  {filteredReleases
+                    .filter(r => {
+                      const effectiveDate =
+                        r.actualDate || r.plannedDate;
+
+                      return (
+                        new Date(effectiveDate).getMonth() === index
+                      );
+                    })
+                    .map(r => {
+                      const rt = releaseTypes.find(t => t.id === r.type);
+
+                      return (
+                        <div
+                          key={r.id}
+                          style={{
+                            background: rt?.color,
+                            color: rt
+                              ? getContrastingTextColor(rt.color)
+                              : "#000",
+                            padding: 6,
+                            marginTop: 6
+                          }}
+                        >
+                          <strong>{r.name}</strong>
+
+                          <div style={{ fontSize: 12 }}>
+                            {r.product} • {rt?.name}
+                          </div>
+
+                          <div style={{ fontSize: 12 }}>
+                            Planned: {r.plannedDate}
+                          </div>
+
+                          {r.actualDate && (
+                            <div style={{ fontSize: 12 }}>
+                              Actual: {r.actualDate}
+                            </div>
+                          )}
+
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 8,
+                              marginTop: 4
+                            }}
+                          >
+                            <button
+                              style={{ fontSize: 12 }}
+                              onClick={() => {
+                                setEditingRelease(r);
+
+                                setForm({
+                                  name: r.name,
+                                  product: r.product,
+                                  plannedDate: r.plannedDate,
+                                  actualDate: r.actualDate || "",
+                                  type: r.type,
+                                  status: r.status
+                                });
+
+                                window.scrollTo({
+                                  top: 0,
+                                  behavior: "smooth"
+                                });
+                              }}
+                            >
+                              Edit
+                            </button>
+
+                            <button
+                              style={{ fontSize: 12, color: "red" }}
+                              onClick={() => deleteRelease(r.id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               ))}
             </div>
@@ -436,16 +744,23 @@ export default function ReleaseTrackerApp() {
         </>
       )}
 
-      {/* =====================
-         EXECUTIVE VIEW (% BAR)
-         ===================== */}
+      {/* EXECUTIVE VIEW */}
       {viewMode === "executive" && (
         <>
           <h2>Monthly Executive Summary</h2>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: 16
+            }}
+          >
             {executiveSummary.map(m => (
-              <div key={m.month} style={{ border: "1px solid #ccc", padding: 12 }}>
+              <div
+                key={m.month}
+                style={{ border: "1px solid #ccc", padding: 12 }}
+              >
                 <strong>{m.month}</strong>
                 <div>Total Releases: {m.total}</div>
 
@@ -454,6 +769,7 @@ export default function ReleaseTrackerApp() {
                     <div style={{ fontSize: 12 }}>
                       {t.name}: {t.count} ({t.percent}%)
                     </div>
+
                     <div style={{ background: "#eee", height: 8 }}>
                       <div
                         style={{
@@ -468,93 +784,6 @@ export default function ReleaseTrackerApp() {
               </div>
             ))}
           </div>
-   {/* =====================
-   PRODUCT RELEASE MIX
-   ===================== */}
-<h2 style={{ marginTop: 32 }}>Product Release Mix</h2>
-
-<div
-  style={{
-    display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)",
-    gap: 16
-  }}
->
-  {(() => {
-    const products = Array.from(new Set(baseFiltered.map(r => r.product)));
-
-    return products.map(product => {
-      const productReleases = baseFiltered.filter(r => r.product === product);
-      const total = productReleases.length;
-
-      if (total === 0) return null;
-
-      const byType = releaseTypes
-        .map(rt => {
-          const count = productReleases.filter(r => r.type === rt.id).length;
-          const percent = Math.round((count / total) * 100);
-          return { ...rt, count, percent };
-        })
-        .filter(t => t.count > 0);
-
-      return (
-        <div
-          key={product}
-          style={{
-            border: "1px solid #ccc",
-            padding: 12
-          }}
-        >
-          <strong>{product}</strong>
-          <div style={{ fontSize: 12, marginBottom: 6 }}>
-            Total Releases: {total}
-          </div>
-
-          {/* Stacked bar */}
-          <div
-            style={{
-              display: "flex",
-              height: 16,
-              width: "100%",
-              border: "1px solid #ddd",
-              overflow: "hidden"
-            }}
-          >
-            {byType.map(t => (
-              <div
-                key={t.id}
-                title={`${t.name}: ${t.count} (${t.percent}%)`}
-                style={{
-                  width: `${t.percent}%`,
-                  background: t.color
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Legend */}
-          <div style={{ fontSize: 12, marginTop: 6 }}>
-            {byType.map(t => (
-              <span key={t.id} style={{ marginRight: 12 }}>
-                <span
-                  style={{
-                    display: "inline-block",
-                    width: 10,
-                    height: 10,
-                    background: t.color,
-                    marginRight: 4
-                  }}
-                />
-                {t.name}: {t.count} ({t.percent}%)
-              </span>
-            ))}
-          </div>
-        </div>
-      );
-    });
-  })()}
-</div>
-
         </>
       )}
     </div>
