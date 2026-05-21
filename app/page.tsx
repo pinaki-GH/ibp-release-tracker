@@ -70,6 +70,12 @@ export default function ReleaseTrackerApp() {
 
   const [viewMode, setViewMode] = useState<"tracker" | "executive">("tracker");
 
+  const [executiveSummaryStatusFilter, setExecutiveSummaryStatusFilter] =
+  useState<"planned" | "completed" | null>(null);
+
+  const [productMixStatusFilter, setProductMixStatusFilter] =
+  useState<"planned" | "completed" | null>(null);
+
   const storageKey = `releaseTracker:${selectedYear}`;
 
   /* Load data */
@@ -791,10 +797,41 @@ export default function ReleaseTrackerApp() {
         </>
       )}
 
-      {/* EXECUTIVE VIEW */}
+            {/* EXECUTIVE VIEW */}
       {viewMode === "executive" && (
         <>
           <h2>Monthly Executive Summary</h2>
+
+          {/* Executive Summary Status Filter */}
+          <div style={{ marginBottom: 16 }}>
+            <strong>Release Status</strong>
+
+            <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+              {releaseStatuses.map(rs => (
+                <button
+                  key={rs.id}
+                  onClick={() =>
+                    setExecutiveSummaryStatusFilter(p =>
+                      p === rs.id
+                        ? null
+                        : (rs.id as "planned" | "completed")
+                    )
+                  }
+                  style={{
+                    background: rs.color,
+                    color: "#fff",
+                    border:
+                      executiveSummaryStatusFilter === rs.id
+                        ? "3px solid #000"
+                        : "1px solid #ccc",
+                    padding: "4px 8px"
+                  }}
+                >
+                  {rs.name}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div
             style={{
@@ -803,38 +840,121 @@ export default function ReleaseTrackerApp() {
               gap: 16
             }}
           >
-            {executiveSummary.map(m => (
-              <div
-                key={m.month}
-                style={{ border: "1px solid #ccc", padding: 12 }}
-              >
-                <strong>{m.month}</strong>
-                <div>Total Releases: {m.total}</div>
+            {MONTHS.map((month, idx) => {
+              const items = baseFiltered.filter(r => {
+                const effectiveDate =
+                  r.actualDate || r.plannedDate;
 
-                {m.byType.map(t => (
-                  <div key={t.id} style={{ marginTop: 6 }}>
-                    <div style={{ fontSize: 12 }}>
-                      {t.name}: {t.count} ({t.percent}%)
-                    </div>
+                if (
+                  new Date(effectiveDate).getMonth() !== idx
+                ) {
+                  return false;
+                }
 
-                    <div style={{ background: "#eee", height: 8 }}>
+                if (
+                  executiveSummaryStatusFilter &&
+                  r.status !== executiveSummaryStatusFilter
+                ) {
+                  return false;
+                }
+
+                return true;
+              });
+
+              const total = items.length;
+
+              const byType = releaseTypes
+                .map(rt => {
+                  const count = items.filter(
+                    r => r.type === rt.id
+                  ).length;
+
+                  return {
+                    ...rt,
+                    count,
+                    percent: total
+                      ? Math.round((count / total) * 100)
+                      : 0
+                  };
+                })
+                .filter(t => t.count > 0);
+
+              return (
+                <div
+                  key={month}
+                  style={{
+                    border: "1px solid #ccc",
+                    padding: 12
+                  }}
+                >
+                  <strong>{month}</strong>
+
+                  <div>Total Releases: {total}</div>
+
+                  {byType.map(t => (
+                    <div key={t.id} style={{ marginTop: 6 }}>
+                      <div style={{ fontSize: 12 }}>
+                        {t.name}: {t.count} ({t.percent}%)
+                      </div>
+
                       <div
                         style={{
-                          width: `${t.percent}%`,
-                          height: "100%",
-                          background: t.color
+                          background: "#eee",
+                          height: 8
                         }}
-                      />
+                      >
+                        <div
+                          style={{
+                            width: `${t.percent}%`,
+                            height: "100%",
+                            background: t.color
+                          }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ))}
+                  ))}
+                </div>
+              );
+            })}
           </div>
-                    {/* =====================
+
+          {/* =====================
              PRODUCT RELEASE MIX
              ===================== */}
-          <h2 style={{ marginTop: 32 }}>Product Release Mix</h2>
+          <h2 style={{ marginTop: 32 }}>
+            Product Release Mix
+          </h2>
+
+          {/* Product Mix Status Filter */}
+          <div style={{ marginBottom: 16 }}>
+            <strong>Release Status</strong>
+
+            <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+              {releaseStatuses.map(rs => (
+                <button
+                  key={rs.id}
+                  onClick={() =>
+                    setProductMixStatusFilter(p =>
+                      p === rs.id
+                        ? null
+                        : (rs.id as "planned" | "completed")
+                    )
+                  }
+                  style={{
+                    background: rs.color,
+                    color: "#fff",
+                    border:
+                      productMixStatusFilter === rs.id
+                        ? "3px solid #000"
+                        : "1px solid #ccc",
+                    padding: "4px 8px"
+                  }}
+                >
+                  {rs.name}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div
             style={{
@@ -849,9 +969,18 @@ export default function ReleaseTrackerApp() {
               );
 
               return products.map(product => {
-                const productReleases = baseFiltered.filter(
-                  r => r.product === product
-                );
+                const productReleases = baseFiltered.filter(r => {
+                  if (r.product !== product) return false;
+
+                  if (
+                    productMixStatusFilter &&
+                    r.status !== productMixStatusFilter
+                  ) {
+                    return false;
+                  }
+
+                  return true;
+                });
 
                 const total = productReleases.length;
 
@@ -941,8 +1070,7 @@ export default function ReleaseTrackerApp() {
                 );
               });
             })()}
-          </div>  
-           
+          </div>
         </>
       )}
     </div>
