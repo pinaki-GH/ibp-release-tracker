@@ -184,32 +184,44 @@ export default function ReleaseTrackerApp() {
 
   /* Filtering */
   const baseFiltered = releases.filter(r => {
-    const effectiveDate = r.actualDate || r.plannedDate;
+  const effectiveDate = r.actualDate || r.plannedDate;
 
-    if (new Date(effectiveDate).getFullYear() !== selectedYear) return false;
+  if (new Date(effectiveDate).getFullYear() !== selectedYear) {
+    return false;
+  }
 
-    if (
-      productFilter &&
-      !r.product.toLowerCase().includes(productFilter.toLowerCase())
-    ) return false;
+  if (
+    productFilter &&
+    !r.product.toLowerCase().includes(productFilter.toLowerCase())
+  ) {
+    return false;
+  }
 
-    return true;
+  /* Apply month filter globally */
+  if (
+    monthFilter !== null &&
+    new Date(effectiveDate).getMonth() !== monthFilter
+  ) {
+    return false;
+  }
+
+  return true;
   });
 
-  const filteredReleases = baseFiltered.filter(r => {
-    const effectiveDate = r.actualDate || r.plannedDate;
+   const filteredReleases = baseFiltered.filter(r => {
+     if (typeFilter.length && !typeFilter.includes(r.type)) {
+       return false;
+     }
 
-    if (typeFilter.length && !typeFilter.includes(r.type)) return false;
+     if (
+    statusFilter &&
+    (r.status ?? "planned") !== statusFilter
+     ) {
+       return false;
+    }
 
-    if (
-      monthFilter !== null &&
-      new Date(effectiveDate).getMonth() !== monthFilter
-    ) return false;
-
-    if (statusFilter && (r.status ?? "planned") !== statusFilter) return false;
-
-    return true;
-  });
+     return true;
+   });
 
   const releaseTypeCounts = baseFiltered.reduce<Record<string, number>>((acc, r) => {
     acc[r.type] = (acc[r.type] || 0) + 1;
