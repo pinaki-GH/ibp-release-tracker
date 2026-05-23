@@ -1103,7 +1103,7 @@ export default function ReleaseTrackerApp() {
         </div>
 
         <div style={{ fontSize: 12, marginTop: 8 }}>
-          {successfulDeliveries} successful out of {completedReleases.length}
+          {successfulDeliveries} on-time deliveries out of {completedReleases.length}
         </div>
       </div>
 
