@@ -1350,41 +1350,112 @@ const delayedReleases = baseFiltered.filter(r => {
   delayedReleases.length > 0 && (
     <div
       style={{
-        border: "1px solid #ccc",
-        padding: 16,
+        marginTop: 24,
         marginBottom: 24,
-        borderRadius: 8
+        border: "1px solid #E5E7EB",
+        borderRadius: 8,
+        padding: 20,
+        background: "#FAFAFA"
       }}
     >
-      <h3>Delayed Releases</h3>
+      <h3
+        style={{
+          marginTop: 0,
+          marginBottom: 16,
+          color: "#374151"
+        }}
+      >
+        Delayed Releases
+      </h3>
 
-      {delayedReleases.map(r => (
-        <div
-          key={r.id}
-          style={{
-            padding: 12,
-            borderBottom: "1px solid #e5e7eb"
-          }}
-        >
-          <strong>{r.name}</strong>
+      <div
+        style={{
+          display: "grid",
+          gap: 12
+        }}
+      >
+        {delayedReleases.map(r => (
+          <div
+            key={r.id}
+            style={{
+              border: "1px solid #E5E7EB",
+              borderRadius: 6,
+              padding: 16,
+              background: "#FFFFFF"
+            }}
+          >
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: 18,
+                marginBottom: 10,
+                color: "#111827"
+              }}
+            >
+              {r.name}
+            </div>
 
-          <div>
-            Product: {r.product}
+            <div
+              style={{
+                color: "#6B7280",
+                marginBottom: 4,
+                fontSize: 14
+              }}
+            >
+              <strong>Product:</strong> {r.product}
+            </div>
+
+            <div
+              style={{
+                color: "#6B7280",
+                marginBottom: 4,
+                fontSize: 14
+              }}
+            >
+              <strong>Planned Date:</strong> {r.plannedDate}
+            </div>
+
+            <div
+              style={{
+                color: "#DC2626",
+                marginBottom: 4,
+                fontSize: 14
+              }}
+            >
+              <strong>Actual Date:</strong> {r.actualDate}
+            </div>
+
+            <div
+              style={{
+                marginTop: 10,
+                padding: 10,
+                background: "#FEF2F2",
+                borderLeft: "4px solid #DC2626",
+                borderRadius: 4
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: 600,
+                  color: "#991B1B",
+                  marginBottom: 4
+                }}
+              >
+                Delay Reason
+              </div>
+
+              <div
+                style={{
+                  color: "#374151",
+                  fontSize: 14
+                }}
+              >
+                {r.delayReason || "Not Provided"}
+              </div>
+            </div>
           </div>
-
-          <div>
-            Planned Date: {r.plannedDate}
-          </div>
-
-          <div>
-            Actual Date: {r.actualDate}
-          </div>
-
-          <div>
-            Delay Reason: {r.delayReason || "Not Provided"}
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
 )}
            
