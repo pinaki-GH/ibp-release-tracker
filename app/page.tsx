@@ -790,7 +790,8 @@ const discardEdit = () => {
                             plannedDate: r.plannedDate,
                             actualDate: r.actualDate || "",
                             type: r.type,
-                            status: r.status
+                            status: r.status,
+                            delayReason: r.delayReason || ""
                           });
 
                           window.scrollTo({
