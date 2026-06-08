@@ -1387,7 +1387,7 @@ const delayedReleases = baseFiltered.filter(r => {
             <div
               style={{
                 fontWeight: 400,
-                fontSize: 10,
+                fontSize: 14,
                 marginBottom: 10,
                 color: "#111827"
               }}
