@@ -20,6 +20,15 @@ const releaseStatuses = [
   { id: "completed", name: "Completed", color: "#16A34A" }
 ];
 
+const PRODUCTS = [
+  "Air Freight Approval Tool",
+  "DDPS",
+  "Lead Time Check",
+  "Predictable Material Capability",
+  "Supplier Performance Card",
+  "Supply Visualization"
+   ];
+
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"
@@ -63,10 +72,10 @@ export default function ReleaseTrackerApp() {
     status: "planned" as "planned" | "completed"
   });
 
-  const [productFilter, setProductFilter] = useState("");
+  const [productFilter, setProductFilter] = useState<string[]>([]);
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<"planned" | "completed" | null>(null);
-  const [monthFilter, setMonthFilter] = useState<number | null>(null);
+  const [monthFilter, setMonthFilter] = useState<number[]>([]);
 
   const [viewMode, setViewMode] = useState<"tracker" | "executive">("tracker");
 
@@ -191,16 +200,16 @@ export default function ReleaseTrackerApp() {
   }
 
   if (
-    productFilter &&
-    !r.product.toLowerCase().includes(productFilter.toLowerCase())
+    productFilter.length > 0 &&
+  !productFilter.includes(r.product)
   ) {
     return false;
   }
 
   /* Apply month filter globally */
   if (
-    monthFilter !== null &&
-    new Date(effectiveDate).getMonth() !== monthFilter
+    monthFilter.length > 0 &&
+  !monthFilter.includes(new Date(effectiveDate).getMonth())
   ) {
     return false;
   }
@@ -556,45 +565,93 @@ export default function ReleaseTrackerApp() {
           </div>
 
           {/* Filters */}
-          <div
-            style={{
-              marginBottom: 24,
-              display: "flex",
-              gap: 8
-            }}
-          >
-            <input
-              placeholder="Filter by product"
-              value={productFilter}
-              onChange={e => setProductFilter(e.target.value)}
-            />
+<div
+  style={{
+    marginBottom: 24,
+    display: "flex",
+    gap: 24,
+    flexWrap: "wrap"
+  }}
+>
+  {/* Product Filter */}
+  <div>
+    <div style={{ fontSize: 12, marginBottom: 4 }}>
+      Products
+    </div>
 
-            {productFilter && (
-              <button onClick={() => setProductFilter("")}>×</button>
-            )}
+    <select
+      multiple
+      value={productFilter}
+      onChange={e =>
+        setProductFilter(
+          Array.from(
+            e.target.selectedOptions,
+            option => option.value
+          )
+        )
+      }
+      style={{
+        minWidth: 260,
+        height: 120
+      }}
+    >
+      {[
+        "Air Freight Approval Tool",
+        "DDPS",
+        "Lead Time Check",
+        "Predictable Material Capability",
+        "Supplier Performance Card",
+        "Supply Visualization"
+      ].map(product => (
+        <option key={product} value={product}>
+          {product}
+        </option>
+      ))}
+    </select>
 
-            <select
-              value={monthFilter ?? ""}
-              onChange={e =>
-                setMonthFilter(
-                  e.target.value ? Number(e.target.value) : null
-                )
-              }
-            >
-              <option value="">Filter by month</option>
+    <div style={{ marginTop: 6 }}>
+      <button onClick={() => setProductFilter([])}>
+        All Products
+      </button>
+    </div>
+  </div>
 
-              {MONTHS.map((m, i) => (
-                <option key={m} value={i}>{m}</option>
-              ))}
-            </select>
+  {/* Month Filter */}
+  <div>
+    <div style={{ fontSize: 12, marginBottom: 4 }}>
+      Months
+    </div>
 
-            {monthFilter !== null && (
-              <button onClick={() => setMonthFilter(null)}>
-                Clear Month
-              </button>
-            )}
-          </div>
+    <select
+      multiple
+      value={monthFilter.map(String)}
+      onChange={e =>
+        setMonthFilter(
+          Array.from(
+            e.target.selectedOptions,
+            option => Number(option.value)
+          )
+        )
+      }
+      style={{
+        minWidth: 180,
+        height: 120
+      }}
+    >
+      {MONTHS.map((month, index) => (
+        <option key={month} value={index}>
+          {month}
+        </option>
+      ))}
+    </select>
 
+    <div style={{ marginTop: 6 }}>
+      <button onClick={() => setMonthFilter([])}>
+        All Months
+      </button>
+    </div>
+  </div>
+</div>
           {/* Status Filter */}
           <div style={{ marginBottom: 16 }}>
             <strong>Release Status</strong>
