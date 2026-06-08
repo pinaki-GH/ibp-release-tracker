@@ -499,46 +499,61 @@ const delayedReleases = baseFiltered.filter(r => {
               <div style={{ fontSize: 12, marginBottom: 4 }}>
                 Actual Release Date
               </div>
-            {
-  form.status === "completed" &&
-  form.actualDate &&
-  new Date(form.actualDate) >
-    new Date(form.plannedDate) && (
+            {form.status === "completed" && (
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns:
+        form.actualDate &&
+        new Date(form.actualDate) >
+          new Date(form.plannedDate)
+          ? "240px 1fr"
+          : "240px",
+      gap: 16,
+      marginBottom: 16
+    }}
+  >
     <div>
-      <label
-        style={{
-          display: "block",
-          fontWeight: 600,
-          marginBottom: 4
-        }}
-      >
-        Delay Reason
-      </label>
+      <div style={{ fontSize: 12, marginBottom: 4 }}>
+        Actual Release Date
+      </div>
 
-      <textarea
-        value={form.delayReason}
+      <input
+        type="date"
+        value={form.actualDate}
         onChange={e =>
           setForm({
             ...form,
-            delayReason: e.target.value
+            actualDate: e.target.value
           })
         }
-        rows={2}
         style={{ width: "100%" }}
       />
     </div>
-  )
-}
-              <input
-                type="date"
-                value={form.actualDate}
-                onChange={e =>
-                  setForm({ ...form, actualDate: e.target.value })
-                }
-                style={{ width: "100%" }}
-              />
-            </div>
-          )}
+
+    {form.actualDate &&
+      new Date(form.actualDate) >
+        new Date(form.plannedDate) && (
+      <div>
+        <div style={{ fontSize: 12, marginBottom: 4 }}>
+          Delay Reason
+        </div>
+
+        <textarea
+          value={form.delayReason}
+          onChange={e =>
+            setForm({
+              ...form,
+              delayReason: e.target.value
+            })
+          }
+          rows={2}
+          style={{ width: "100%" }}
+        />
+      </div>
+    )}
+  </div>
+)}
 
           <div
             style={{
