@@ -201,7 +201,8 @@ export default function ReleaseTrackerApp() {
       plannedDate: "",
       actualDate: "",
       type: "",
-      status: "planned"
+      status: "planned",
+      delayReason: ""
     });
   };
 
