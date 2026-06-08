@@ -490,16 +490,6 @@ const delayedReleases = baseFiltered.filter(r => {
           </div>
 
           {form.status === "completed" && (
-            <div
-              style={{
-                marginBottom: 16,
-                maxWidth: 240
-              }}
-            >
-              <div style={{ fontSize: 12, marginBottom: 4 }}>
-                Actual Release Date
-              </div>
-            {form.status === "completed" && (
   <div
     style={{
       display: "grid",
@@ -554,7 +544,7 @@ const delayedReleases = baseFiltered.filter(r => {
     )}
   </div>
 )}
-
+           
           <div
             style={{
               display: "flex",
