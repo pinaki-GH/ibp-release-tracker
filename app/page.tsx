@@ -70,7 +70,7 @@ export default function ReleaseTrackerApp() {
     plannedDate: "",
     actualDate: "",
     type: "",
-    status: "planned" as "planned" | "completed"
+    status: "planned" as "planned" | "completed",
     delayReason: ""
   });
 
