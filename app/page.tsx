@@ -684,10 +684,10 @@ export default function ReleaseTrackerApp() {
           </div>
 
           {/* Results */}
-          {monthFilter !== null ? (
+          {monthFilter.length === 1 ? (
             <div>
               <h3>
-                {MONTHS[monthFilter]} {selectedYear}
+                {MONTHS[monthFilter[0]]} {selectedYear}
               </h3>
 
               {filteredReleases.map(r => {
