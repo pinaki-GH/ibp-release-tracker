@@ -1387,7 +1387,7 @@ const delayedReleases = baseFiltered.filter(r => {
             <div
               style={{
                 fontWeight: 600,
-                fontSize: 18,
+                fontSize: 14,
                 marginBottom: 10,
                 color: "#111827"
               }}
@@ -1399,7 +1399,7 @@ const delayedReleases = baseFiltered.filter(r => {
               style={{
                 color: "#6B7280",
                 marginBottom: 4,
-                fontSize: 14
+                fontSize: 10
               }}
             >
               <strong>Product:</strong> {r.product}
@@ -1409,7 +1409,7 @@ const delayedReleases = baseFiltered.filter(r => {
               style={{
                 color: "#6B7280",
                 marginBottom: 4,
-                fontSize: 14
+                fontSize: 10
               }}
             >
               <strong>Planned Date:</strong> {r.plannedDate}
@@ -1419,7 +1419,7 @@ const delayedReleases = baseFiltered.filter(r => {
               style={{
                 color: "#DC2626",
                 marginBottom: 4,
-                fontSize: 14
+                fontSize: 10
               }}
             >
               <strong>Actual Date:</strong> {r.actualDate}
@@ -1447,7 +1447,7 @@ const delayedReleases = baseFiltered.filter(r => {
               <div
                 style={{
                   color: "#374151",
-                  fontSize: 14
+                  fontSize: 10
                 }}
               >
                 {r.delayReason || "Not Provided"}
