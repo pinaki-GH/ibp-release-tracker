@@ -1292,8 +1292,19 @@ const delayedReleases = baseFiltered.filter(r => {
         </div>
 
         <div style={{ fontSize: 12, marginTop: 8 }}>
-          Completed after planned date
-        </div>
+           Completed after planned date
+         </div>
+
+         <div
+         style={{
+         fontSize: 11,
+         marginTop: 6,
+         color: "#2563EB",
+         fontWeight: 600
+        }}
+      >
+  Click to view details →
+</div>
       </div>
 
       {/* Pending Releases */}
