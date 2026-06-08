@@ -42,6 +42,7 @@ interface ReleaseItem {
   actualDate?: string;
   type: string;
   status: "planned" | "completed";
+  delayReason?: string;
 }
 
 /* ======================
@@ -70,6 +71,7 @@ export default function ReleaseTrackerApp() {
     actualDate: "",
     type: "",
     status: "planned" as "planned" | "completed"
+    delayReason: ""
   });
 
   const [productFilter, setProductFilter] = useState<string[]>([]);
@@ -82,8 +84,9 @@ export default function ReleaseTrackerApp() {
   const [executiveSummaryStatusFilter, setExecutiveSummaryStatusFilter] =
   useState<"planned" | "completed" | null>(null);
 
-  const [productMixStatusFilter, setProductMixStatusFilter] =
-  useState<"planned" | "completed" | null>(null);
+  const [productMixStatusFilter, setProductMixStatusFilter] = useState<"planned" | "completed" | null>(null);
+
+  const [showDelayedDetails, setShowDelayedDetails] = useState(false);
 
   const storageKey = `releaseTracker:${selectedYear}`;
 
@@ -142,6 +145,22 @@ export default function ReleaseTrackerApp() {
       alert("Actual Release Date is required for completed releases.");
       return;
     }
+
+    const isDelayed =
+     form.status === "completed" &&
+     form.actualDate &&
+     new Date(form.actualDate) >
+       new Date(form.plannedDate);
+
+   if (
+     isDelayed &&
+     !form.delayReason.trim()
+      ) {
+     alert(
+       "Delay Reason is required for delayed releases."
+     );
+     return;
+   } 
 
     const releaseYear = new Date(
       form.actualDate || form.plannedDate
@@ -241,7 +260,7 @@ export default function ReleaseTrackerApp() {
 
   const exportYearToExcel = () => {
     const header =
-      "Release Name,Product,Planned Release Date,Actual Release Date,Year,Month,Release Type,Release Status\n";
+      "Release Name,Product,Planned Release Date,Actual Release Date,Year,Month,Release Type,Release Status,Delay Reason\n";
 
     const rows = baseFiltered
       .map(r => {
@@ -256,7 +275,7 @@ export default function ReleaseTrackerApp() {
         const statusName =
           r.status === "completed" ? "Completed" : "Planned";
 
-        return `"${r.name}","${r.product}","${r.plannedDate}","${r.actualDate ?? ""}","${selectedYear}","${month}","${typeName}","${statusName}"`;
+        return `"${r.name}","${r.product}","${r.plannedDate}","${r.actualDate ?? ""}","${selectedYear}","${month}","${typeName}","${statusName}","${r.delayReason || ""}"`;
       })
       .join("\n");
 
@@ -271,28 +290,30 @@ export default function ReleaseTrackerApp() {
   };
 
   const clearForm = () => {
-    setForm({
-      name: "",
-      product: "",
-      plannedDate: "",
-      actualDate: "",
-      type: "",
-      status: "planned"
-    });
-  };
+  setForm({
+    name: "",
+    product: "",
+    plannedDate: "",
+    actualDate: "",
+    type: "",
+    status: "planned",
+    delayReason: ""
+  });
+};
 
-  const discardEdit = () => {
-    setEditingRelease(null);
+const discardEdit = () => {
+  setEditingRelease(null);
 
-    setForm({
-      name: "",
-      product: "",
-      plannedDate: "",
-      actualDate: "",
-      type: "",
-      status: "planned"
-    });
-  };
+  setForm({
+    name: "",
+    product: "",
+    plannedDate: "",
+    actualDate: "",
+    type: "",
+    status: "planned",
+    delayReason: ""
+  });
+};
 
   /* ======================
      EXECUTIVE SUMMARY DATA
@@ -467,7 +488,36 @@ export default function ReleaseTrackerApp() {
               <div style={{ fontSize: 12, marginBottom: 4 }}>
                 Actual Release Date
               </div>
+            {
+  form.status === "completed" &&
+  form.actualDate &&
+  new Date(form.actualDate) >
+    new Date(form.plannedDate) && (
+    <div>
+      <label
+        style={{
+          display: "block",
+          fontWeight: 600,
+          marginBottom: 4
+        }}
+      >
+        Delay Reason
+      </label>
 
+      <textarea
+        value={form.delayReason}
+        onChange={e =>
+          setForm({
+            ...form,
+            delayReason: e.target.value
+          })
+        }
+        rows={2}
+        style={{ width: "100%" }}
+      />
+    </div>
+  )
+}
               <input
                 type="date"
                 value={form.actualDate}
@@ -1202,11 +1252,15 @@ export default function ReleaseTrackerApp() {
 
       {/* Delayed Releases */}
       <div
+        onClick={() =>
+          setShowDelayedDetails(!showDelayedDetails)
+        }
         style={{
           border: "1px solid #ccc",
           padding: 16,
-          borderRadius: 8
-        }}
+          borderRadius: 8,
+          cursor: "pointer"
+         }}
       >
         <div
           style={{
@@ -1275,6 +1329,48 @@ export default function ReleaseTrackerApp() {
   );
 })()}
 
+{showDelayedDetails &&
+  delayedReleases.length > 0 && (
+    <div
+      style={{
+        border: "1px solid #ccc",
+        padding: 16,
+        marginBottom: 24,
+        borderRadius: 8
+      }}
+    >
+      <h3>Delayed Releases</h3>
+
+      {delayedReleases.map(r => (
+        <div
+          key={r.id}
+          style={{
+            padding: 12,
+            borderBottom: "1px solid #e5e7eb"
+          }}
+        >
+          <strong>{r.name}</strong>
+
+          <div>
+            Product: {r.product}
+          </div>
+
+          <div>
+            Planned Date: {r.plannedDate}
+          </div>
+
+          <div>
+            Actual Date: {r.actualDate}
+          </div>
+
+          <div>
+            Delay Reason: {r.delayReason || "Not Provided"}
+          </div>
+        </div>
+      ))}
+    </div>
+)}
+           
            
           {/* =====================
              PRODUCT RELEASE MIX
