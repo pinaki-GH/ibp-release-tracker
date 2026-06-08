@@ -316,6 +316,16 @@ const discardEdit = () => {
   });
 };
 
+const delayedReleases = baseFiltered.filter(r => {
+  if (r.status !== "completed") return false;
+  if (!r.actualDate) return false;
+
+  return (
+    new Date(r.actualDate).getTime() >
+    new Date(r.plannedDate).getTime()
+  );
+});
+   
   /* ======================
      EXECUTIVE SUMMARY DATA
      ====================== */
@@ -1099,19 +1109,7 @@ const discardEdit = () => {
     );
   });
 
-  /* =====================
-     DELAYED RELEASES
-     actual date > planned date
-     ===================== */
-  const delayedReleases = completedReleases.filter(r => {
-    if (!r.actualDate) return false;
-
-    return (
-      new Date(r.actualDate).getTime() >
-      new Date(r.plannedDate).getTime()
-    );
-  });
-
+  
   /* =====================
      COMPLETION RATE
      ===================== */
