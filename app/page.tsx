@@ -1183,7 +1183,7 @@ const delayedReleases = baseFiltered.filter(r => {
         </div>
 
         <div style={{ fontSize: 12, marginTop: 8 }}>
-          {completedReleases.length} completed out of {validReleases.length} due as on today
+          {completedReleases.length} completed out of {validReleases.length} due by today
         </div>
       </div>
 
