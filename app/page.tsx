@@ -115,34 +115,31 @@ export default function ReleaseTrackerApp() {
 
   const storageKey = "releaseTracker:all";
 
-  /*
-   * Load one shared collection so completed releases can move between years.
-   * If it does not exist, migrate the existing year-specific collections.
-   * The old keys are retained as a backup and are never deleted here.
-   */
+  /* Load the shared release list once. If it does not exist yet, consolidate
+     legacy year-specific lists while retaining the old keys as backups. */
   useEffect(() => {
     setStorageError(null);
 
     try {
-      const stored = window.localStorage.getItem(storageKey);
+      const sharedStored = window.localStorage.getItem(storageKey);
       let sourceRecords: any[] = [];
 
-      if (stored !== null) {
-        const parsed = JSON.parse(stored);
+      if (sharedStored !== null) {
+        const parsed = JSON.parse(sharedStored);
         if (!Array.isArray(parsed)) throw new Error("Shared release data is not a list.");
         sourceRecords = parsed;
       } else {
-        const legacyKeys: string[] = [];
-        for (let i = 0; i < window.localStorage.length; i += 1) {
-          const key = window.localStorage.key(i);
-          if (key && /^releaseTracker:\d{4}$/.test(key)) legacyKeys.push(key);
-        }
+        const legacyKeys = Object.keys(window.localStorage).filter(key =>
+          /^releaseTracker:\d{4}$/.test(key)
+        );
 
         for (const key of legacyKeys) {
           const legacyStored = window.localStorage.getItem(key);
-          if (!legacyStored) continue;
+          if (legacyStored === null) continue;
           const parsed = JSON.parse(legacyStored);
-          if (!Array.isArray(parsed)) throw new Error(`Saved release data in ${key} is not a list.`);
+          if (!Array.isArray(parsed)) {
+            throw new Error(`Saved release data in ${key} is not a list.`);
+          }
           sourceRecords.push(...parsed);
         }
       }
@@ -155,21 +152,20 @@ export default function ReleaseTrackerApp() {
         delayReason: r.delayReason ?? ""
       }));
 
-      // Older year keys can contain the same release. Keep one copy per id.
+      // Avoid duplicate entries if a release exists in multiple legacy lists.
       const uniqueRecords = Array.from(
-        new Map(normalized.map((release) => [release.id, release])).values()
+        new Map(normalized.map(record => [record.id, record])).values()
       );
-
       setReleases(uniqueRecords);
       setHasLoadedReleases(true);
     } catch {
       setStorageError(
-        "Saved release data could not be read. It has been left untouched to avoid data loss. Check browser storage before trying again."
+        "Saved release data could not be read. It has been left untouched to avoid data loss."
       );
     }
-  }, []);
+  }, [storageKey]);
 
-  /* Persist only after the shared collection has loaded successfully. */
+  /* Persist only after the shared list has loaded successfully. */
   useEffect(() => {
     if (!hasLoadedReleases || storageError) return;
 
@@ -237,21 +233,16 @@ export default function ReleaseTrackerApp() {
      return;
    } 
 
-    const plannedYear = parseDateOnly(form.plannedDate)?.getUTCFullYear();
-    const actualYear = form.status === "completed"
-      ? parseDateOnly(form.actualDate)?.getUTCFullYear()
-      : undefined;
+    const effectiveFormDate =
+      form.status === "completed" ? form.actualDate : form.plannedDate;
+    const parsedEffectiveDate = parseDateOnly(effectiveFormDate);
+    const releaseYear = parsedEffectiveDate?.getUTCFullYear();
 
-    // Planned and actual dates may fall in different years. When editing a
-    // completed release, either date may connect it to the selected year.
-    const belongsToSelectedYear = form.status === "completed"
-      ? plannedYear === selectedYear || actualYear === selectedYear
-      : plannedYear === selectedYear;
-
-    if (!belongsToSelectedYear) {
-      alert(
-        `The planned date or actual release date must fall within the selected year (${selectedYear}).`
-      );
+    // New releases must belong to the selected year. When editing, allow the
+    // effective date to move to another year; shared storage and year filtering
+    // will place it under the correct year after saving.
+    if (!editingRelease && releaseYear !== selectedYear) {
+      alert(`Release Date must be within the selected year (${selectedYear}).`);
       return;
     }
 
