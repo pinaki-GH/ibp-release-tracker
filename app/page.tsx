@@ -1151,21 +1151,21 @@ const delayedReleases = baseFiltered.filter(r => {
 </h2>
 
 {(() => {
-  const today = new Date();
+  // Use a date-only key so KPI cutoffs are independent of browser timezone.
+  const now = new Date();
+  const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
   /* =====================
-     VALID RELEASES FOR KPI
-     Include:
-     - Completed releases
-     - Planned releases where
-       planned date <= today
+     KPI POPULATION
+     Include completed releases whose actual date is today or earlier,
+     plus planned releases whose planned date is today or earlier.
+     Future releases are excluded from the completion-rate denominator.
      ===================== */
   const validReleases = baseFiltered.filter(r => {
-    const comparisonDate = new Date(
-      r.actualDate || r.plannedDate
-    );
+    const comparisonDate =
+      r.status === "completed" ? (r.actualDate || r.plannedDate) : r.plannedDate;
 
-    return comparisonDate <= today;
+    return Boolean(parseDateOnly(comparisonDate)) && comparisonDate <= todayKey;
   });
 
   const completedReleases = validReleases.filter(
@@ -1288,7 +1288,7 @@ const delayedReleases = baseFiltered.filter(r => {
             marginBottom: 8
           }}
         >
-          On-Time Delivery
+          On-Time or Early Delivery
         </div>
 
         <div
@@ -1302,7 +1302,7 @@ const delayedReleases = baseFiltered.filter(r => {
         </div>
 
         <div style={{ fontSize: 12, marginTop: 8 }}>
-          {successfulDeliveries} on-time deliveries out of {completedReleases.length}
+          {successfulDeliveries} on-time or early deliveries out of {completedReleases.length}
         </div>
       </div>
 
