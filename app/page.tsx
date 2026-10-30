@@ -45,6 +45,29 @@ interface ReleaseItem {
   delayReason?: string;
 }
 
+/* Parse date-only values as UTC to avoid timezone-related month/year shifts. */
+const parseDateOnly = (value?: string | null): Date | null => {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
+};
+
+const getEffectiveReleaseDate = (release: ReleaseItem): string =>
+  release.status === "completed" && release.actualDate
+    ? release.actualDate
+    : release.plannedDate;
+
 /* ======================
    AUTO TEXT CONTRAST
    ====================== */
@@ -169,21 +192,33 @@ export default function ReleaseTrackerApp() {
       return;
     }
 
-    if (!form.type) {
-      alert("Release Type is required.");
+    if (!parseDateOnly(form.plannedDate)) {
+      alert("Please enter a valid Planned Release Date.");
       return;
     }
 
-    if (form.status === "completed" && !form.actualDate) {
-      alert("Actual Release Date is required for completed releases.");
+    if (form.status === "completed") {
+      if (!form.actualDate) {
+        alert("Actual Release Date is required for completed releases.");
+        return;
+      }
+
+      if (!parseDateOnly(form.actualDate)) {
+        alert("Please enter a valid Actual Release Date.");
+        return;
+      }
+    }
+
+    if (!form.type) {
+      alert("Release Type is required.");
       return;
     }
 
     const isDelayed =
      form.status === "completed" &&
      form.actualDate &&
-     new Date(form.actualDate) >
-       new Date(form.plannedDate);
+     form.actualDate >
+       form.plannedDate;
 
    if (
      isDelayed &&
@@ -195,9 +230,10 @@ export default function ReleaseTrackerApp() {
      return;
    } 
 
-    const releaseYear = new Date(
-      form.actualDate || form.plannedDate
-    ).getFullYear();
+    const effectiveFormDate =
+      form.status === "completed" ? form.actualDate : form.plannedDate;
+    const parsedEffectiveDate = parseDateOnly(effectiveFormDate);
+    const releaseYear = parsedEffectiveDate?.getUTCFullYear();
 
     if (releaseYear !== selectedYear) {
       alert(`Release Date must be within the selected year (${selectedYear}).`);
@@ -246,9 +282,9 @@ export default function ReleaseTrackerApp() {
 
   /* Filtering */
   const baseFiltered = releases.filter(r => {
-  const effectiveDate = r.actualDate || r.plannedDate;
+  const effectiveDate = getEffectiveReleaseDate(r);
 
-  if (new Date(effectiveDate).getFullYear() !== selectedYear) {
+  if (!parseDateOnly(effectiveDate) || parseDateOnly(effectiveDate)?.getUTCFullYear() !== selectedYear) {
     return false;
   }
 
@@ -262,7 +298,7 @@ export default function ReleaseTrackerApp() {
   /* Apply month filter globally */
   if (
     monthFilter.length > 0 &&
-  !monthFilter.includes(new Date(effectiveDate).getMonth())
+  !monthFilter.includes(parseDateOnly(effectiveDate)?.getUTCMonth())
   ) {
     return false;
   }
@@ -298,10 +334,10 @@ export default function ReleaseTrackerApp() {
 
     const rows = baseFiltered
       .map(r => {
-        const effectiveDate = r.actualDate || r.plannedDate;
-        const d = new Date(effectiveDate);
+        const effectiveDate = getEffectiveReleaseDate(r);
+        const d = parseDateOnly(effectiveDate);
 
-        const month = MONTHS[d.getMonth()];
+        const month = d ? MONTHS[d.getUTCMonth()] : "Unknown";
 
         const typeName =
           releaseTypes.find(t => t.id === r.type)?.name || r.type;
@@ -354,8 +390,7 @@ const delayedReleases = baseFiltered.filter(r => {
   if (!r.actualDate) return false;
 
   return (
-    new Date(r.actualDate).getTime() >
-    new Date(r.plannedDate).getTime()
+    r.actualDate > r.plannedDate
   );
 });
    
@@ -364,8 +399,8 @@ const delayedReleases = baseFiltered.filter(r => {
      ====================== */
   const executiveSummary = MONTHS.map((month, idx) => {
     const items = baseFiltered.filter(r => {
-      const effectiveDate = r.actualDate || r.plannedDate;
-      return new Date(effectiveDate).getMonth() === idx;
+      const effectiveDate = getEffectiveReleaseDate(r);
+      return parseDateOnly(effectiveDate)?.getUTCMonth() === idx;
     });
 
     const total = items.length;
@@ -544,8 +579,8 @@ const delayedReleases = baseFiltered.filter(r => {
       display: "grid",
       gridTemplateColumns:
         form.actualDate &&
-        new Date(form.actualDate) >
-          new Date(form.plannedDate)
+        form.actualDate >
+          form.plannedDate
           ? "240px 1fr"
           : "240px",
       gap: 16,
@@ -571,8 +606,8 @@ const delayedReleases = baseFiltered.filter(r => {
     </div>
 
     {form.actualDate &&
-      new Date(form.actualDate) >
-        new Date(form.plannedDate) && (
+      form.actualDate >
+        form.plannedDate && (
       <div>
         <div style={{ fontSize: 12, marginBottom: 4 }}>
           Delay Reason
@@ -897,11 +932,10 @@ const delayedReleases = baseFiltered.filter(r => {
 
                   {filteredReleases
                     .filter(r => {
-                      const effectiveDate =
-                        r.actualDate || r.plannedDate;
+                      const effectiveDate = getEffectiveReleaseDate(r);
 
                       return (
-                        new Date(effectiveDate).getMonth() === index
+                        parseDateOnly(effectiveDate)?.getUTCMonth() === index
                       );
                     })
                     .map(r => {
@@ -1028,11 +1062,10 @@ const delayedReleases = baseFiltered.filter(r => {
           >
             {MONTHS.map((month, idx) => {
               const items = baseFiltered.filter(r => {
-                const effectiveDate =
-                  r.actualDate || r.plannedDate;
+                const effectiveDate = getEffectiveReleaseDate(r);
 
                 if (
-                  new Date(effectiveDate).getMonth() !== idx
+                  parseDateOnly(effectiveDate)?.getUTCMonth() !== idx
                 ) {
                   return false;
                 }
@@ -1145,8 +1178,7 @@ const delayedReleases = baseFiltered.filter(r => {
     if (!r.actualDate) return false;
 
     return (
-      new Date(r.actualDate).getTime() ===
-      new Date(r.plannedDate).getTime()
+      r.actualDate === r.plannedDate
     );
   });
 
@@ -1158,8 +1190,7 @@ const delayedReleases = baseFiltered.filter(r => {
     if (!r.actualDate) return false;
 
     return (
-      new Date(r.actualDate).getTime() <
-      new Date(r.plannedDate).getTime()
+      r.actualDate < r.plannedDate
     );
   });
 
