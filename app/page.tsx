@@ -85,7 +85,7 @@ export default function ReleaseTrackerApp() {
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
 
   const [releases, setReleases] = useState<ReleaseItem[]>([]);
-  const [loadedYear, setLoadedYear] = useState<number | null>(null);
+  const [hasLoadedReleases, setHasLoadedReleases] = useState(false);
   const [storageError, setStorageError] = useState<string | null>(null);
   const [editingRelease, setEditingRelease] = useState<ReleaseItem | null>(null);
 
@@ -113,58 +113,65 @@ export default function ReleaseTrackerApp() {
 
   const [showDelayedDetails, setShowDelayedDetails] = useState(false);
 
-  const storageKey = `releaseTracker:${selectedYear}`;
+  const storageKey = "releaseTracker:all";
 
-  /* Load data for the selected year before allowing writes to that year. */
+  /*
+   * Load one shared collection so completed releases can move between years.
+   * If it does not exist, migrate the existing year-specific collections.
+   * The old keys are retained as a backup and are never deleted here.
+   */
   useEffect(() => {
-    let stored: string | null;
-
     setStorageError(null);
 
     try {
-      stored = window.localStorage.getItem(storageKey);
-    } catch {
-      setStorageError(
-        "Browser storage is unavailable. Your changes cannot be saved until storage access is restored."
-      );
-      return;
-    }
+      const stored = window.localStorage.getItem(storageKey);
+      let sourceRecords: any[] = [];
 
-    if (stored) {
-      try {
+      if (stored !== null) {
         const parsed = JSON.parse(stored);
-
-        if (!Array.isArray(parsed)) {
-          throw new Error("Saved release data is not a list.");
+        if (!Array.isArray(parsed)) throw new Error("Shared release data is not a list.");
+        sourceRecords = parsed;
+      } else {
+        const legacyKeys: string[] = [];
+        for (let i = 0; i < window.localStorage.length; i += 1) {
+          const key = window.localStorage.key(i);
+          if (key && /^releaseTracker:\d{4}$/.test(key)) legacyKeys.push(key);
         }
 
-        const normalized: ReleaseItem[] = parsed.map((r: any) => ({
-          ...r,
-          plannedDate: r.plannedDate ?? r.date ?? "",
-          actualDate: r.actualDate ?? "",
-          status: r.status === "completed" ? "completed" : "planned",
-          delayReason: r.delayReason ?? ""
-        }));
-
-        setReleases(normalized);
-      } catch {
-        // Do not mark this year as loaded: this prevents malformed data from
-        // being silently replaced with an empty list by the persistence effect.
-        setStorageError(
-          `Saved release data for ${selectedYear} could not be read. It has been left untouched to avoid data loss.`
-        );
-        return;
+        for (const key of legacyKeys) {
+          const legacyStored = window.localStorage.getItem(key);
+          if (!legacyStored) continue;
+          const parsed = JSON.parse(legacyStored);
+          if (!Array.isArray(parsed)) throw new Error(`Saved release data in ${key} is not a list.`);
+          sourceRecords.push(...parsed);
+        }
       }
-    } else {
-      setReleases([]);
+
+      const normalized: ReleaseItem[] = sourceRecords.map((r: any) => ({
+        ...r,
+        plannedDate: r.plannedDate ?? r.date ?? "",
+        actualDate: r.actualDate ?? "",
+        status: r.status === "completed" ? "completed" : "planned",
+        delayReason: r.delayReason ?? ""
+      }));
+
+      // Older year keys can contain the same release. Keep one copy per id.
+      const uniqueRecords = Array.from(
+        new Map(normalized.map((release) => [release.id, release])).values()
+      );
+
+      setReleases(uniqueRecords);
+      setHasLoadedReleases(true);
+    } catch {
+      setStorageError(
+        "Saved release data could not be read. It has been left untouched to avoid data loss. Check browser storage before trying again."
+      );
     }
+  }, []);
 
-    setLoadedYear(selectedYear);
-  }, [selectedYear, storageKey]);
-
-  /* Persist only after the currently selected year's data has loaded. */
+  /* Persist only after the shared collection has loaded successfully. */
   useEffect(() => {
-    if (loadedYear !== selectedYear || storageError) return;
+    if (!hasLoadedReleases || storageError) return;
 
     try {
       window.localStorage.setItem(storageKey, JSON.stringify(releases));
@@ -173,7 +180,7 @@ export default function ReleaseTrackerApp() {
         "Your releases could not be saved to browser storage. Check available storage space or browser privacy settings."
       );
     }
-  }, [releases, storageKey, selectedYear, loadedYear, storageError]);
+  }, [releases, storageKey, hasLoadedReleases, storageError]);
 
   /* Add / Update */
   const saveRelease = () => {
@@ -230,13 +237,21 @@ export default function ReleaseTrackerApp() {
      return;
    } 
 
-    const effectiveFormDate =
-      form.status === "completed" ? form.actualDate : form.plannedDate;
-    const parsedEffectiveDate = parseDateOnly(effectiveFormDate);
-    const releaseYear = parsedEffectiveDate?.getUTCFullYear();
+    const plannedYear = parseDateOnly(form.plannedDate)?.getUTCFullYear();
+    const actualYear = form.status === "completed"
+      ? parseDateOnly(form.actualDate)?.getUTCFullYear()
+      : undefined;
 
-    if (releaseYear !== selectedYear) {
-      alert(`Release Date must be within the selected year (${selectedYear}).`);
+    // Planned and actual dates may fall in different years. When editing a
+    // completed release, either date may connect it to the selected year.
+    const belongsToSelectedYear = form.status === "completed"
+      ? plannedYear === selectedYear || actualYear === selectedYear
+      : plannedYear === selectedYear;
+
+    if (!belongsToSelectedYear) {
+      alert(
+        `The planned date or actual release date must fall within the selected year (${selectedYear}).`
+      );
       return;
     }
 
