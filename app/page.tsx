@@ -68,6 +68,18 @@ const getEffectiveReleaseDate = (release: ReleaseItem): string =>
     ? release.actualDate
     : release.plannedDate;
 
+/* Escape CSV cells, including embedded quotes, commas, and line breaks. */
+const toCsvCell = (value: unknown): string => {
+  let text = value == null ? "" : String(value);
+
+  // Reduce spreadsheet formula-injection risk for user-entered text.
+  if (/^[\t\r ]*[=+@]/.test(text) || /^[\t\r ]*-/.test(text)) {
+    text = `'${text}`;
+  }
+
+  return `"${text.replace(/"/g, '""')}"`;
+};
+
 /* ======================
    AUTO TEXT CONTRAST
    ====================== */
@@ -246,28 +258,36 @@ export default function ReleaseTrackerApp() {
       return;
     }
 
-    const normalizedName = form.name.trim().toLowerCase();
+    const normalizedName = form.name.trim().replace(/\s+/g, " ").toLocaleLowerCase();
 
     const duplicate = releases.some(r =>
-      r.name.trim().toLowerCase() === normalizedName &&
+      r.name.trim().replace(/\s+/g, " ").toLocaleLowerCase() === normalizedName &&
       r.id !== editingRelease?.id
     );
 
     if (duplicate) {
-      alert("A release with this name already exists for this year.");
+      alert("A release with this name already exists. Please use a distinct release name.");
       return;
     }
+
+    const releaseToSave: Omit<ReleaseItem, "id"> = {
+      ...form,
+      name: form.name.trim().replace(/\s+/g, " "),
+      product: form.product.trim(),
+      actualDate: form.status === "completed" ? form.actualDate : "",
+      delayReason: form.status === "completed" && isDelayed ? form.delayReason.trim() : ""
+    };
 
     if (editingRelease) {
       setReleases(prev =>
         prev.map(r =>
-          r.id === editingRelease.id ? { ...editingRelease, ...form } : r
+          r.id === editingRelease.id ? { ...r, ...releaseToSave } : r
         )
       );
 
       setEditingRelease(null);
     } else {
-      setReleases(prev => [...prev, { ...form, id: Date.now() }]);
+      setReleases(prev => [...prev, { ...releaseToSave, id: Date.now() }]);
     }
 
     setForm({
@@ -351,7 +371,17 @@ export default function ReleaseTrackerApp() {
         const statusName =
           r.status === "completed" ? "Completed" : "Planned";
 
-        return `"${r.name}","${r.product}","${r.plannedDate}","${r.actualDate ?? ""}","${selectedYear}","${month}","${typeName}","${statusName}","${r.delayReason || ""}"`;
+        return [
+          r.name,
+          r.product,
+          r.plannedDate,
+          r.actualDate ?? "",
+          selectedYear,
+          month,
+          typeName,
+          statusName,
+          r.delayReason || ""
+        ].map(toCsvCell).join(",");
       })
       .join("\n");
 
@@ -562,12 +592,16 @@ const delayedReleases = baseFiltered.filter(r => {
               </div>
               <select
                 value={form.status}
-                onChange={e =>
+                onChange={e => {
+                  const nextStatus = e.target.value as "planned" | "completed";
                   setForm({
                     ...form,
-                    status: e.target.value as "planned" | "completed"
-                  })
-                }
+                    status: nextStatus,
+                    ...(nextStatus === "planned"
+                      ? { actualDate: "", delayReason: "" }
+                      : {})
+                  });
+                }}
                 style={{ width: "100%" }}
               >
                 {releaseStatuses.map(rs => (
