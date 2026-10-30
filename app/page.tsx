@@ -62,6 +62,8 @@ export default function ReleaseTrackerApp() {
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
 
   const [releases, setReleases] = useState<ReleaseItem[]>([]);
+  const [loadedYear, setLoadedYear] = useState<number | null>(null);
+  const [storageError, setStorageError] = useState<string | null>(null);
   const [editingRelease, setEditingRelease] = useState<ReleaseItem | null>(null);
 
   const [form, setForm] = useState({
@@ -90,34 +92,65 @@ export default function ReleaseTrackerApp() {
 
   const storageKey = `releaseTracker:${selectedYear}`;
 
-  /* Load data */
+  /* Load data for the selected year before allowing writes to that year. */
   useEffect(() => {
-    const stored = localStorage.getItem(storageKey);
+    let stored: string | null;
+
+    setStorageError(null);
+
+    try {
+      stored = window.localStorage.getItem(storageKey);
+    } catch {
+      setStorageError(
+        "Browser storage is unavailable. Your changes cannot be saved until storage access is restored."
+      );
+      return;
+    }
 
     if (stored) {
       try {
-        const parsed = JSON.parse(stored) as any[];
+        const parsed = JSON.parse(stored);
 
-        const normalized: ReleaseItem[] = parsed.map(r => ({
+        if (!Array.isArray(parsed)) {
+          throw new Error("Saved release data is not a list.");
+        }
+
+        const normalized: ReleaseItem[] = parsed.map((r: any) => ({
           ...r,
           plannedDate: r.plannedDate ?? r.date ?? "",
           actualDate: r.actualDate ?? "",
-          status: r.status ?? "planned"
+          status: r.status === "completed" ? "completed" : "planned",
+          delayReason: r.delayReason ?? ""
         }));
 
         setReleases(normalized);
       } catch {
-        setReleases([]);
+        // Do not mark this year as loaded: this prevents malformed data from
+        // being silently replaced with an empty list by the persistence effect.
+        setStorageError(
+          `Saved release data for ${selectedYear} could not be read. It has been left untouched to avoid data loss.`
+        );
+        return;
       }
     } else {
       setReleases([]);
     }
-  }, [storageKey]);
 
-  /* Persist data */
+    setLoadedYear(selectedYear);
+  }, [selectedYear, storageKey]);
+
+  /* Persist only after the currently selected year's data has loaded. */
   useEffect(() => {
-    localStorage.setItem(storageKey, JSON.stringify(releases));
-  }, [releases, storageKey]);
+    if (loadedYear !== selectedYear || storageError) return;
+
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(releases));
+    } catch {
+      setStorageError(
+        "Your releases could not be saved to browser storage. Check available storage space or browser privacy settings."
+      );
+    }
+  }, [releases, storageKey, selectedYear, loadedYear, storageError]);
 
   /* Add / Update */
   const saveRelease = () => {
@@ -355,6 +388,22 @@ const delayedReleases = baseFiltered.filter(r => {
   return (
     <div style={{ padding: 24, fontFamily: "Arial, sans-serif" }}>
       <h1>IBP Release Tracker</h1>
+
+      {storageError && (
+        <div
+          role="alert"
+          style={{
+            marginBottom: 16,
+            padding: 12,
+            border: "1px solid #DC2626",
+            borderRadius: 6,
+            background: "#FEF2F2",
+            color: "#991B1B"
+          }}
+        >
+          <strong>Storage warning:</strong> {storageError}
+        </div>
+      )}
 
       {/* View Toggle */}
       <div style={{ marginBottom: 16 }}>
@@ -1183,7 +1232,7 @@ const delayedReleases = baseFiltered.filter(r => {
         </div>
 
         <div style={{ fontSize: 12, marginTop: 8 }}>
-          {completedReleases.length} completed out of {validReleases.length} due by today
+          {completedReleases.length} completed out of {validReleases.length}
         </div>
       </div>
 
