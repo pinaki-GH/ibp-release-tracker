@@ -124,6 +124,7 @@ export default function ReleaseTrackerApp() {
   const [productMixStatusFilter, setProductMixStatusFilter] = useState<"planned" | "completed" | null>(null);
 
   const [showDelayedDetails, setShowDelayedDetails] = useState(false);
+  const [showDataQualityDetails, setShowDataQualityDetails] = useState(false);
 
   const storageKey = "releaseTracker:all";
 
@@ -332,6 +333,62 @@ export default function ReleaseTrackerApp() {
   return true;
   });
 
+  /* Data-quality checks run against the complete shared release list, not just
+     the selected year or currently visible filters. */
+  const normalizedReleaseName = (name: unknown) =>
+    String(name ?? "").trim().replace(/\s+/g, " ").toLocaleLowerCase();
+
+  const releaseNameCounts = releases.reduce<Record<string, number>>((counts, release) => {
+    const key = normalizedReleaseName(release.name);
+    if (key) counts[key] = (counts[key] || 0) + 1;
+    return counts;
+  }, {});
+
+  const dataQualityIssues = releases.map(release => {
+    const issues: string[] = [];
+    const name = String(release.name ?? "").trim();
+    const product = String(release.product ?? "").trim();
+    const plannedDateValid = Boolean(parseDateOnly(release.plannedDate));
+    const actualDateValid = Boolean(parseDateOnly(release.actualDate));
+    const isCompleted = release.status === "completed";
+    const isDelayed = isCompleted && actualDateValid && plannedDateValid &&
+      String(release.actualDate) > String(release.plannedDate);
+
+    if (!name) issues.push("Release name is missing.");
+    if (!product) issues.push("Product / App is missing.");
+    if (!release.type) issues.push("Release type is missing.");
+    if (!plannedDateValid) issues.push("Planned release date is missing or invalid.");
+
+    if (isCompleted && !release.actualDate) {
+      issues.push("Completed release is missing its actual release date.");
+    } else if (isCompleted && !actualDateValid) {
+      issues.push("Actual release date is invalid.");
+    }
+
+    if (isDelayed && !String(release.delayReason ?? "").trim()) {
+      issues.push("Delayed release is missing a delay reason.");
+    }
+
+    if (!isCompleted && (release.actualDate || String(release.delayReason ?? "").trim())) {
+      issues.push("Planned release contains completed-only details (actual date or delay reason).");
+    }
+
+    if (isCompleted && plannedDateValid && actualDateValid && !isDelayed && String(release.delayReason ?? "").trim()) {
+      issues.push("Delay reason is present, but the release is not delayed.");
+    }
+
+    const nameKey = normalizedReleaseName(release.name);
+    if (nameKey && releaseNameCounts[nameKey] > 1) {
+      issues.push("Release name is duplicated across the shared tracker (names must be globally unique across all years).");
+    }
+
+    return { id: release.id, name: name || "Unnamed release", issues };
+  }).filter(item => item.issues.length > 0);
+
+  const dataQualityIssueCount = dataQualityIssues.reduce(
+    (count, item) => count + item.issues.length, 0
+  );
+
    const filteredReleases = baseFiltered.filter(r => {
      if (typeFilter.length && !typeFilter.includes(r.type)) {
        return false;
@@ -520,6 +577,51 @@ const delayedReleases = baseFiltered.filter(r => {
               Export Year to Excel
             </button>
           </div>
+
+          {/* Data Quality Summary — checks all years and ignores view filters. */}
+          {hasLoadedReleases && !storageError && (
+          <div
+            role="status"
+            style={{
+              marginBottom: 20,
+              padding: 12,
+              border: `1px solid ${dataQualityIssueCount ? "#FCA5A5" : "#86EFAC"}`,
+              borderRadius: 6,
+              background: dataQualityIssueCount ? "#FEF2F2" : "#F0FDF4",
+              color: dataQualityIssueCount ? "#991B1B" : "#166534"
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+              <strong>
+                {dataQualityIssueCount === 0
+                  ? "Data Quality: All records valid"
+                  : `Data Quality: ${dataQualityIssues.length} release(s) need review — ${dataQualityIssueCount} issue(s)`}
+              </strong>
+              {dataQualityIssues.length > 0 && (
+                <button onClick={() => setShowDataQualityDetails(value => !value)}>
+                  {showDataQualityDetails ? "Hide issues" : "View issues"}
+                </button>
+              )}
+            </div>
+            <div style={{ fontSize: 12, marginTop: 4 }}>
+              Checks cover all years in the shared tracker, regardless of the selected year or active filters.
+            </div>
+            {showDataQualityDetails && dataQualityIssues.length > 0 && (
+              <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
+                {dataQualityIssues.map(item => (
+                  <div key={item.id} style={{ background: "#FFFFFF", border: "1px solid #FECACA", borderRadius: 4, padding: 10 }}>
+                    <strong>{item.name}</strong>
+                    <ul style={{ margin: "6px 0 0", paddingLeft: 20 }}>
+                      {item.issues.map((issue, index) => (
+                        <li key={`${item.id}-${index}`} style={{ fontSize: 12, marginTop: 3 }}>{issue}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          )}
 
           {/* Add / Edit */}
           <div
