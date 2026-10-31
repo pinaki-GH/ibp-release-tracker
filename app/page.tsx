@@ -1321,7 +1321,7 @@ const delayedReleases = baseFiltered.filter(r => {
                 .filter(t => t.count > 0);
 
               return (
-                <div className="rt-exec-month-card"
+                <div className="rt-exec-month-card rt-exec-product-card"
                   key={month}
                   style={{
                     border: "1px solid #ccc",
@@ -1330,30 +1330,65 @@ const delayedReleases = baseFiltered.filter(r => {
                 >
                   <strong>{month}</strong>
 
-                  <div>Total Releases: {total}</div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      marginBottom: 6
+                    }}
+                  >
+                    Total Releases: {total}
+                  </div>
 
-                  {byType.map(t => (
-                    <div key={t.id} style={{ marginTop: 6 }}>
-                      <div style={{ fontSize: 12 }}>
-                        {t.name}: {t.count} ({t.percent}%)
-                      </div>
-
+                  {/* Stacked bar, matching Product Release Mix */}
+                  <div
+                    style={{
+                      display: "flex",
+                      height: 16,
+                      width: "100%",
+                      border: "1px solid #ddd",
+                      overflow: "hidden",
+                      background: "#edf2ee"
+                    }}
+                  >
+                    {byType.map(t => (
                       <div
+                        key={t.id}
+                        title={`${t.name}: ${t.count} (${t.percent}%)`}
                         style={{
-                          background: "#eee",
-                          height: 8
+                          width: `${t.percent}%`,
+                          background: t.color
                         }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Matching release-type legend */}
+                  <div
+                    style={{
+                      fontSize: 12,
+                      marginTop: 6
+                    }}
+                  >
+                    {byType.length > 0 ? byType.map(t => (
+                      <span
+                        key={t.id}
+                        style={{ marginRight: 12 }}
                       >
-                        <div
+                        <span
                           style={{
-                            width: `${t.percent}%`,
-                            height: "100%",
-                            background: t.color
+                            display: "inline-block",
+                            width: 10,
+                            height: 10,
+                            background: t.color,
+                            marginRight: 4
                           }}
                         />
-                      </div>
-                    </div>
-                  ))}
+                        {t.name}: {t.count} ({t.percent}%)
+                      </span>
+                    )) : (
+                      <span>No releases this month</span>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -2000,9 +2035,8 @@ const delayedReleases = baseFiltered.filter(r => {
         .rt-exec-month-card { min-width: 0; padding: 16px !important; border: 1px solid #e2eae5 !important; border-radius: 13px; background: #fff; box-shadow: 0 3px 12px rgba(28,55,43,.03); }
         .rt-exec-month-card > strong { display: block; margin-bottom: 5px; color: #29483d; font-size: 14px; }
         .rt-exec-month-card > div:nth-child(2) { color: #718096; font-size: 11px; }
-        .rt-exec-month-card > div[style*="margin-top: 6px"] { padding-top: 8px; border-top: 1px solid #edf1ee; }
-        .rt-exec-month-card > div[style*="margin-top: 6px"] > div:first-child { margin-bottom: 5px; color: #506456; font-size: 11px !important; }
-        .rt-exec-month-card > div[style*="background: rgb(238, 238, 238)"], .rt-exec-month-card > div[style*="background: #eee"] { overflow: hidden; border-radius: 999px; background: #edf2ee !important; }
+        .rt-exec-month-card > div[style*="height: 16px"] { border: 0 !important; border-radius: 999px; background: #edf2ee !important; }
+        .rt-exec-month-card > div:last-child { display: flex; flex-wrap: wrap; gap: 7px 12px; color: #718096; font-size: 10px !important; line-height: 1.6; }
         .rt-exec-section-heading { margin: 30px 0 14px; }
         .rt-exec-section-heading h2 { margin: 0; font-size: 20px; }
         .rt-exec-kpi-grid { grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)) !important; gap: 14px !important; margin-top: 14px !important; }
