@@ -115,6 +115,7 @@ export default function ReleaseTrackerApp() {
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<"planned" | "completed" | null>(null);
   const [monthFilter, setMonthFilter] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   const [viewMode, setViewMode] = useState<"tracker" | "executive">("tracker");
 
@@ -411,6 +412,12 @@ export default function ReleaseTrackerApp() {
        return false;
     }
 
+     const query = searchQuery.trim().toLocaleLowerCase();
+     if (query && ![r.name, r.product, r.plannedDate, r.actualDate || ""]
+       .some(value => String(value).toLocaleLowerCase().includes(query))) {
+       return false;
+     }
+
      return true;
    });
 
@@ -539,61 +546,8 @@ const delayedReleases = baseFiltered.filter(r => {
   });
 
   return (
-    <div id="release-tracker-app" className="rt-app">
-      <style jsx global>{`
-        #release-tracker-app {
-          --rt-ink: #172b3a;
-          --rt-muted: #64748b;
-          --rt-green: #176b52;
-          --rt-green-dark: #115440;
-          --rt-green-soft: #e8f3ee;
-          --rt-canvas: #f4f7f6;
-          --rt-line: #e1e9e5;
-          color: var(--rt-ink);
-          background: var(--rt-canvas);
-          min-height: 100vh;
-          padding: 32px clamp(16px, 3vw, 44px) 48px;
-          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 14px;
-          line-height: 1.5;
-        }
-        #release-tracker-app * { box-sizing: border-box; }
-        #release-tracker-app .rt-header {
-          max-width: 1500px; margin: 0 auto 24px; display: flex;
-          align-items: flex-end; justify-content: space-between; gap: 18px; flex-wrap: wrap;
-        }
-        #release-tracker-app .rt-eyebrow { color: var(--rt-green); font-size: 11px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; margin-bottom: 5px; }
-        #release-tracker-app h1 { color: var(--rt-ink); font-size: clamp(26px, 3vw, 34px); line-height: 1.15; letter-spacing: -.035em; margin: 0; font-weight: 750; }
-        #release-tracker-app .rt-subtitle { color: var(--rt-muted); margin: 7px 0 0; font-size: 14px; }
-        #release-tracker-app .rt-nav { max-width: 1500px; margin: 0 auto 24px; display: flex; gap: 6px; border-bottom: 1px solid var(--rt-line); }
-        #release-tracker-app .rt-nav button { border: 0 !important; border-radius: 9px 9px 0 0 !important; background: transparent !important; color: var(--rt-muted) !important; padding: 11px 18px !important; font-weight: 650; box-shadow: none !important; }
-        #release-tracker-app .rt-nav button[aria-current="page"] { color: var(--rt-green-dark) !important; background: #e8f3ee !important; box-shadow: inset 0 -2px 0 var(--rt-green) !important; }
-        #release-tracker-app > :not(style) { max-width: 1500px; }
-        #release-tracker-app h2 { color: var(--rt-ink); font-size: 21px; letter-spacing: -.02em; margin-bottom: 14px; }
-        #release-tracker-app h3 { color: var(--rt-ink); }
-        #release-tracker-app button { cursor: pointer; border: 1px solid #cbd8d1; border-radius: 8px; background: #fff; color: #29483d; padding: 8px 12px; font: inherit; font-weight: 600; transition: background .15s ease, border-color .15s ease, transform .15s ease; }
-        #release-tracker-app button:hover:not(:disabled) { border-color: #8bb5a2; background: #f2f8f5; }
-        #release-tracker-app button:disabled { cursor: default; opacity: .55; }
-        #release-tracker-app input, #release-tracker-app select, #release-tracker-app textarea { border: 1px solid #d5dfda; border-radius: 8px; background: #fff; color: var(--rt-ink); padding: 9px 11px; font: inherit; min-height: 38px; }
-        #release-tracker-app input:focus, #release-tracker-app select:focus, #release-tracker-app textarea:focus { outline: 3px solid rgba(23,107,82,.13); border-color: #4d987b; }
-        #release-tracker-app [style*="border: 1px solid #ccc"] { border-color: var(--rt-line) !important; border-radius: 12px; background-color: #fff; }
-        #release-tracker-app [style*="repeat(5, 1fr)"] { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important; }
-        #release-tracker-app [style*="repeat(3, 1fr)"] { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important; }
-        #release-tracker-app [style*="repeat(2, 1fr)"] { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important; }
-        @media (max-width: 640px) {
-          #release-tracker-app { padding: 22px 14px 32px; }
-          #release-tracker-app .rt-nav { overflow-x: auto; }
-          #release-tracker-app .rt-nav button { white-space: nowrap; padding: 10px 12px !important; }
-          #release-tracker-app select[multiple] { max-width: calc(100vw - 36px); }
-        }
-      `}</style>
-      <header className="rt-header">
-        <div>
-          <div className="rt-eyebrow">Product delivery workspace</div>
-          <h1>IBP Release Tracker</h1>
-          <p className="rt-subtitle">Plan releases, monitor delivery progress, and keep teams aligned.</p>
-        </div>
-      </header>
+    <div style={{ padding: 24, fontFamily: "Arial, sans-serif" }}>
+      <h1>IBP Release Tracker</h1>
 
       {storageError && (
         <div
@@ -611,16 +565,28 @@ const delayedReleases = baseFiltered.filter(r => {
         </div>
       )}
 
-      {/* Primary navigation */}
-      <nav className="rt-nav" aria-label="Main navigation">
-        <button type="button" aria-current={viewMode === "tracker" ? "page" : undefined} onClick={() => setViewMode("tracker")}>Release Tracker</button>
-        <button type="button" aria-current={viewMode === "executive" ? "page" : undefined} onClick={() => setViewMode("executive")}>Executive Insights</button>
-      </nav>
+      {/* View Toggle */}
+      <div style={{ marginBottom: 16 }}>
+        <button
+          disabled={viewMode === "tracker"}
+          onClick={() => setViewMode("tracker")}
+        >
+          Tracker View
+        </button>
+
+        <button
+          disabled={viewMode === "executive"}
+          onClick={() => setViewMode("executive")}
+          style={{ marginLeft: 8 }}
+        >
+          Executive View
+        </button>
+      </div>
 
       {viewMode === "tracker" && (
-        <>
+        <div className="rt-tracker">
           {/* Year + Export */}
-          <div
+          <div className="rt-year-toolbar"
             style={{
               display: "flex",
               alignItems: "center",
@@ -628,7 +594,7 @@ const delayedReleases = baseFiltered.filter(r => {
               marginBottom: 16
             }}
           >
-            <strong>Year:</strong>
+            <strong>Reporting year</strong>
 
             <select
               value={selectedYear}
@@ -639,14 +605,15 @@ const delayedReleases = baseFiltered.filter(r => {
               ))}
             </select>
 
-            <button onClick={exportYearToExcel}>
-              Export Year to Excel
+            <button className="rt-export-button" onClick={exportYearToExcel}>
+              ↓ Export CSV
             </button>
           </div>
 
           {/* Data Quality Summary — checks all years and ignores view filters. */}
           {hasLoadedReleases && !storageError && (
           <div
+            className="rt-quality-summary"
             role="status"
             style={{
               marginBottom: 20,
@@ -707,7 +674,16 @@ const delayedReleases = baseFiltered.filter(r => {
           )}
 
           {/* Add / Edit */}
-          <div
+          <section className="rt-form-panel">
+          <div className="rt-section-heading">
+            <div>
+              <div className="rt-eyebrow">RELEASE MANAGEMENT</div>
+              <h2>{editingRelease ? "Update release" : "Add a release"}</h2>
+              <p>Capture the planned delivery and track its actual outcome.</p>
+            </div>
+            {editingRelease && <span className="rt-editing-pill">Editing existing release</span>}
+          </div>
+          <div className="rt-form-grid"
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(5, 1fr)",
@@ -881,18 +857,22 @@ const delayedReleases = baseFiltered.filter(r => {
               </button>
             )}
           </div>
+          </section>
 
           {/* Legend */}
-          <div style={{ marginBottom: 16 }}>
-            <strong>
-              Release Type Legend — Total releases: {totalYearCount}
-            </strong>
+          <section className="rt-filter-panel">
+          <div className="rt-legend-heading">
+            <div>
+              <div className="rt-eyebrow">BROWSE RELEASES</div>
+              <h2>Release type</h2>
+              <p>{totalYearCount} release(s) in {selectedYear}</p>
+            </div>
 
             <button
               onClick={() => setTypeFilter([])}
-              style={{ marginLeft: 12 }}
+              className="rt-text-button"
             >
-              Clear Release Type Filter
+              Clear type filter
             </button>
 
             <div
@@ -908,6 +888,7 @@ const delayedReleases = baseFiltered.filter(r => {
 
                 return (
                   <button
+                    className={`rt-type-chip ${isSelected ? "is-selected" : ""}`}
                     key={rt.id}
                     onClick={() =>
                       setTypeFilter(p =>
@@ -940,7 +921,7 @@ const delayedReleases = baseFiltered.filter(r => {
           </div>
 
           {/* Filters */}
-<div
+<div className="rt-filter-controls"
   style={{
     marginBottom: 24,
     display: "flex",
@@ -948,13 +929,22 @@ const delayedReleases = baseFiltered.filter(r => {
     flexWrap: "wrap"
   }}
 >
+  <div className="rt-search-field">
+    <label htmlFor="release-search">Search releases</label>
+    <input
+      id="release-search"
+      type="search"
+      placeholder="Search name, product or date…"
+      value={searchQuery}
+      onChange={e => setSearchQuery(e.target.value)}
+    />
+  </div>
   {/* Product Filter */}
-  <div>
-    <div style={{ fontSize: 12, marginBottom: 4 }}>
-      Products
-    </div>
-
+  <div className="rt-multi-filter">
+    <label htmlFor="product-filter">Products</label>
     <select
+      id="product-filter"
+      className="rt-multi-select"
       multiple
       value={productFilter}
       onChange={e =>
@@ -985,19 +975,18 @@ const delayedReleases = baseFiltered.filter(r => {
     </select>
 
     <div style={{ marginTop: 6 }}>
-      <button onClick={() => setProductFilter([])}>
-        All Products
+      <button className="rt-text-button" onClick={() => setProductFilter([])}>
+        Clear products
       </button>
     </div>
   </div>
 
   {/* Month Filter */}
-  <div>
-    <div style={{ fontSize: 12, marginBottom: 4 }}>
-      Months
-    </div>
-
+  <div className="rt-multi-filter">
+    <label htmlFor="month-filter">Months</label>
     <select
+      id="month-filter"
+      className="rt-multi-select"
       multiple
       value={monthFilter.map(String)}
       onChange={e =>
@@ -1021,19 +1010,21 @@ const delayedReleases = baseFiltered.filter(r => {
     </select>
 
     <div style={{ marginTop: 6 }}>
-      <button onClick={() => setMonthFilter([])}>
-        All Months
+      <button className="rt-text-button" onClick={() => setMonthFilter([])}>
+        Clear months
       </button>
     </div>
   </div>
 </div>
+          </section>
           {/* Status Filter */}
-          <div style={{ marginBottom: 16 }}>
-            <strong>Release Status</strong>
+          <div className="rt-status-filter" style={{ marginBottom: 16 }}>
+            <strong>Release status</strong>
 
             <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
               {releaseStatuses.map(rs => (
                 <button
+                  className={`rt-status-chip ${statusFilter === rs.id ? "is-selected" : ""}`}
                   key={rs.id}
                   onClick={() =>
                     setStatusFilter(p =>
@@ -1059,27 +1050,28 @@ const delayedReleases = baseFiltered.filter(r => {
           </div>
 
           {/* Results */}
-          {monthFilter.length === 1 ? (
+          <div className="rt-results-heading">
             <div>
+              <div className="rt-eyebrow">RELEASE SCHEDULE</div>
+              <h2>{monthFilter.length === 1 ? `${MONTHS[monthFilter[0]]} ${selectedYear}` : `Monthly schedule · ${selectedYear}`}</h2>
+            </div>
+            <span>{filteredReleases.length} matching release(s)</span>
+          </div>
+          {monthFilter.length === 1 ? (
+            <div className="rt-month-list">
               <h3>
                 {MONTHS[monthFilter[0]]} {selectedYear}
               </h3>
 
+              {filteredReleases.length === 0 && <div className="rt-empty-state">No releases match these filters. Try clearing a filter or changing your search.</div>}
               {filteredReleases.map(r => {
                 const rt = releaseTypes.find(t => t.id === r.type);
 
                 return (
                   <div
                     key={r.id}
-                    style={{
-                      background: rt?.color,
-                      color: rt
-                        ? getContrastingTextColor(rt.color)
-                        : "#000",
-                      padding: 8,
-                      marginTop: 6,
-                      border: "1px solid #ccc"
-                    }}
+                    className="rt-release-card"
+                    style={{ borderLeft: `4px solid ${rt?.color || "#94A3B8"}` }}
                   >
                     <strong>{r.name}</strong>
 
@@ -1139,7 +1131,7 @@ const delayedReleases = baseFiltered.filter(r => {
               })}
             </div>
           ) : (
-            <div
+            <div className="rt-month-grid"
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(3, 1fr)",
@@ -1148,6 +1140,7 @@ const delayedReleases = baseFiltered.filter(r => {
             >
               {MONTHS.map((month, index) => (
                 <div
+                  className="rt-month-card"
                   key={month}
                   style={{ border: "1px solid #ccc", padding: 12 }}
                 >
@@ -1168,15 +1161,9 @@ const delayedReleases = baseFiltered.filter(r => {
 
                       return (
                         <div
+                          className="rt-release-card rt-release-card-compact"
                           key={r.id}
-                          style={{
-                            background: rt?.color,
-                            color: rt
-                              ? getContrastingTextColor(rt.color)
-                              : "#000",
-                            padding: 6,
-                            marginTop: 6
-                          }}
+                          style={{ borderLeft: `4px solid ${rt?.color || "#94A3B8"}` }}
                         >
                           <strong>{r.name}</strong>
 
@@ -1239,7 +1226,7 @@ const delayedReleases = baseFiltered.filter(r => {
               ))}
             </div>
           )}
-        </>
+        </div>
       )}
 
             {/* EXECUTIVE VIEW */}
@@ -1647,6 +1634,72 @@ const delayedReleases = baseFiltered.filter(r => {
           Releases in planned status
         </div>
       </div>
+      <style jsx global>{`
+        .rt-tracker { color: #24364b; }
+        .rt-tracker h2 { margin: 0; color: #183b32; font-size: 20px; letter-spacing: -0.025em; }
+        .rt-tracker h3 { color: #183b32; }
+        .rt-tracker p { color: #718096; }
+        .rt-tracker button, .rt-tracker input, .rt-tracker select, .rt-tracker textarea { font: inherit; }
+        .rt-tracker button { border: 1px solid #d8e2dd; border-radius: 9px; padding: 9px 13px; background: #fff; color: #29483d; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s ease, border-color .15s ease, transform .15s ease; }
+        .rt-tracker button:hover { background: #f0f6f2; border-color: #9ab7a8; }
+        .rt-tracker button:focus-visible, .rt-tracker input:focus-visible, .rt-tracker select:focus-visible, .rt-tracker textarea:focus-visible { outline: 3px solid rgba(78,138,112,.2); outline-offset: 1px; border-color: #4e8a70; }
+        .rt-tracker input, .rt-tracker select, .rt-tracker textarea { box-sizing: border-box; min-height: 40px; border: 1px solid #dce5e0; border-radius: 9px; padding: 9px 11px; background: #fff; color: #24364b; font-size: 13px; }
+        .rt-tracker textarea { min-height: 76px; resize: vertical; }
+        .rt-year-toolbar { padding: 15px 17px; border: 1px solid #e2eae5; border-radius: 14px; background: #fff; box-shadow: 0 3px 12px rgba(28,55,43,.035); }
+        .rt-year-toolbar select { min-width: 112px; font-weight: 700; }
+        .rt-export-button { margin-left: auto; background: #174b3b !important; border-color: #174b3b !important; color: #fff !important; }
+        .rt-export-button:hover { background: #22634d !important; }
+        .rt-quality-summary { border-radius: 12px !important; padding: 14px 16px !important; }
+        .rt-form-panel, .rt-filter-panel { margin-bottom: 20px; padding: 20px; border: 1px solid #e2eae5; border-radius: 15px; background: #fff; box-shadow: 0 4px 16px rgba(28,55,43,.035); }
+        .rt-section-heading, .rt-legend-heading, .rt-results-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 17px; }
+        .rt-section-heading p, .rt-legend-heading p { margin: 5px 0 0; font-size: 12px; }
+        .rt-eyebrow { margin-bottom: 5px; color: #6b8c7b; font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+        .rt-editing-pill { padding: 6px 10px; border-radius: 999px; background: #edf5f0; color: #28634b; font-size: 11px; font-weight: 700; white-space: nowrap; }
+        .rt-form-grid { grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)) !important; gap: 14px !important; margin-bottom: 14px !important; }
+        .rt-form-grid > div > div:first-child { margin-bottom: 6px !important; color: #506456; font-size: 11px !important; font-weight: 700; }
+        .rt-form-grid input, .rt-form-grid select { width: 100%; }
+        .rt-form-panel > div[style*="grid-template-columns"] { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important; }
+        .rt-form-panel > div[style*="display: flex"] { align-items: center; margin-top: 12px; margin-bottom: 0 !important; }
+        .rt-form-panel button:first-child { background: #174b3b; border-color: #174b3b; color: #fff; }
+        .rt-form-panel button:first-child:hover { background: #22634d; }
+        .rt-filter-panel { padding-bottom: 17px; }
+        .rt-legend-heading { margin-bottom: 12px; }
+        .rt-legend-heading p { margin-bottom: 0; }
+        .rt-text-button { padding: 6px 9px !important; border: 0 !important; background: transparent !important; color: #39765b !important; font-size: 12px !important; }
+        .rt-type-chip { border-radius: 999px !important; padding: 7px 11px !important; border: 1px solid #e2e8e5 !important; background: #f7faf8 !important; color: #34483e !important; font-size: 11px !important; }
+        .rt-type-chip.is-selected { background: #e8f2ec !important; border: 1px solid #4e8a70 !important; box-shadow: 0 0 0 2px rgba(78,138,112,.12) !important; transform: none !important; color: #174b3b !important; }
+        .rt-filter-controls { display: grid !important; grid-template-columns: minmax(220px,1.4fr) minmax(180px,1fr) minmax(160px,.8fr); gap: 16px !important; align-items: start; padding: 17px; border: 1px solid #e2eae5; border-radius: 14px; background: #f9fbfa; }
+        .rt-filter-controls label { display: block; margin-bottom: 7px; color: #506456; font-size: 11px; font-weight: 700; }
+        .rt-search-field input { width: 100%; }
+        .rt-multi-select { width: 100%; min-width: 0 !important; height: 88px !important; padding: 5px !important; }
+        .rt-multi-select option { padding: 4px 6px; }
+        .rt-multi-filter > div { margin-top: 3px !important; }
+        .rt-status-filter { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 15px 0 20px !important; }
+        .rt-status-filter > strong { color: #506456; font-size: 12px; }
+        .rt-status-filter > div { margin-top: 0 !important; }
+        .rt-status-chip { border-radius: 999px !important; padding: 7px 13px !important; background: #fff !important; color: #52665b !important; border-color: #dce5e0 !important; }
+        .rt-status-chip.is-selected { background: #e8f2ec !important; border-color: #4e8a70 !important; color: #174b3b !important; box-shadow: 0 0 0 2px rgba(78,138,112,.1); }
+        .rt-results-heading { margin: 22px 0 12px; }
+        .rt-results-heading > span { color: #718096; font-size: 12px; }
+        .rt-month-grid { grid-template-columns: repeat(auto-fit, minmax(255px, 1fr)) !important; gap: 14px !important; }
+        .rt-month-card { min-width: 0; padding: 15px !important; border: 1px solid #e2eae5 !important; border-radius: 13px; background: #fff; box-shadow: 0 3px 12px rgba(28,55,43,.025); }
+        .rt-month-card > strong { display: block; padding-bottom: 10px; border-bottom: 1px solid #edf1ee; color: #29483d; font-size: 13px; }
+        .rt-release-card { margin-top: 9px !important; padding: 12px 13px !important; border: 1px solid #e5ece8 !important; border-left-width: 4px !important; border-radius: 9px; background: #fbfcfb !important; color: #263b32 !important; }
+        .rt-release-card > strong { display: block; margin-bottom: 5px; color: #203d31; font-size: 13px; }
+        .rt-release-card > div { margin-top: 4px; color: #718096; font-size: 11px !important; line-height: 1.45; }
+        .rt-release-card button { padding: 5px 9px !important; font-size: 11px !important; }
+        .rt-release-card button:last-child { color: #b54747 !important; }
+        .rt-release-card-compact { padding: 10px !important; }
+        .rt-month-list .rt-release-card { max-width: 760px; }
+        .rt-empty-state { padding: 26px; border: 1px dashed #cbd9d1; border-radius: 12px; background: #fbfdfb; color: #718096; text-align: center; font-size: 13px; }
+        @media (max-width: 760px) {
+          .rt-form-panel, .rt-filter-panel { padding: 15px; }
+          .rt-filter-controls { grid-template-columns: 1fr !important; }
+          .rt-section-heading, .rt-legend-heading, .rt-results-heading { align-items: flex-start; }
+          .rt-year-toolbar { flex-wrap: wrap; }
+          .rt-export-button { margin-left: 0; }
+        }
+      `}</style>
     </div>
   );
 })()}
