@@ -265,13 +265,9 @@ export default function ReleaseTrackerApp() {
     const parsedEffectiveDate = parseDateOnly(effectiveFormDate);
     const releaseYear = parsedEffectiveDate?.getUTCFullYear();
 
-    // New releases must belong to the selected year. When editing, allow the
-    // effective date to move to another year; shared storage and year filtering
-    // will place it under the correct year after saving.
-    if (!editingRelease && releaseYear !== selectedYear) {
-      alert(`Release Date must be within the selected year (${selectedYear}).`);
-      return;
-    }
+    // Releases may be created for any valid calendar year, regardless of the
+    // currently selected reporting year. Shared storage retains all releases;
+    // the reporting-year selector controls which year is currently displayed.
 
     const normalizedName = form.name.trim().replace(/\s+/g, " ").toLocaleLowerCase();
 
