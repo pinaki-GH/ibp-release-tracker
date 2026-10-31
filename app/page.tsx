@@ -1071,12 +1071,16 @@ const delayedReleases = baseFiltered.filter(r => {
                   <div
                     key={r.id}
                     className="rt-release-card"
-                    style={{ borderLeft: `4px solid ${rt?.color || "#94A3B8"}` }}
+                    style={{
+                      borderLeft: `4px solid ${rt?.color || "#94A3B8"}`,
+                      background: `${rt?.color || "#94A3B8"}12`
+                    }}
                   >
                     <strong>{r.name}</strong>
 
-                    <div style={{ fontSize: 12 }}>
-                      {r.product} • {rt?.name}
+                    <div className="rt-release-card-meta" style={{ fontSize: 12 }}>
+                      <span>{r.product}</span>
+                      {rt && <span className="rt-release-type-tag" style={{ background: `${rt.color}18`, color: rt.color, borderColor: `${rt.color}55` }}>{rt.name}</span>}
                     </div>
 
                     <div style={{ fontSize: 12 }}>
@@ -1163,12 +1167,16 @@ const delayedReleases = baseFiltered.filter(r => {
                         <div
                           className="rt-release-card rt-release-card-compact"
                           key={r.id}
-                          style={{ borderLeft: `4px solid ${rt?.color || "#94A3B8"}` }}
+                          style={{
+                            borderLeft: `4px solid ${rt?.color || "#94A3B8"}`,
+                            background: `${rt?.color || "#94A3B8"}12`
+                          }}
                         >
                           <strong>{r.name}</strong>
 
-                          <div style={{ fontSize: 12 }}>
-                            {r.product} • {rt?.name}
+                          <div className="rt-release-card-meta" style={{ fontSize: 12 }}>
+                            <span>{r.product}</span>
+                            {rt && <span className="rt-release-type-tag" style={{ background: `${rt.color}18`, color: rt.color, borderColor: `${rt.color}55` }}>{rt.name}</span>}
                           </div>
 
                           <div style={{ fontSize: 12 }}>
@@ -1668,14 +1676,19 @@ const delayedReleases = baseFiltered.filter(r => {
           gap: 12
         }}
       >
-        {delayedReleases.map(r => (
+        {delayedReleases.map(r => {
+          const rt = releaseTypes.find(t => t.id === r.type);
+          const typeColor = rt?.color || "#94A3B8";
+          return (
           <div
             key={r.id}
+            className="rt-exec-delayed-release-card"
             style={{
               border: "1px solid #E5E7EB",
-              borderRadius: 6,
+              borderLeft: `4px solid ${typeColor}`,
+              borderRadius: 10,
               padding: 16,
-              background: "#FFFFFF"
+              background: `${typeColor}12`
             }}
           >
             <div
@@ -1689,14 +1702,9 @@ const delayedReleases = baseFiltered.filter(r => {
               {r.name}
             </div>
 
-            <div
-              style={{
-                color: "#6B7280",
-                marginBottom: 4,
-                fontSize: 12
-              }}
-            >
-              <strong>Product:</strong> {r.product}
+            <div className="rt-release-card-meta" style={{ marginBottom: 8, fontSize: 12 }}>
+              <span><strong>Product:</strong> {r.product}</span>
+              {rt && <span className="rt-release-type-tag" style={{ background: `${typeColor}18`, color: typeColor, borderColor: `${typeColor}55` }}>{rt.name}</span>}
             </div>
 
             <div
@@ -1749,7 +1757,8 @@ const delayedReleases = baseFiltered.filter(r => {
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
 )}
@@ -1946,8 +1955,8 @@ const delayedReleases = baseFiltered.filter(r => {
         .rt-filter-panel { padding-bottom: 17px; }
         .rt-legend-heading { margin-bottom: 12px; }
         .rt-text-button { padding: 6px 9px !important; border: 0 !important; background: transparent !important; color: #39765b !important; font-size: 12px !important; }
-        .rt-type-chip { border-radius: 999px !important; padding: 7px 11px !important; border: 1px solid #e2e8e5 !important; background: #f7faf8 !important; color: #34483e !important; font-size: 11px !important; }
-        .rt-type-chip.is-selected { background: #e8f2ec !important; border: 1px solid #4e8a70 !important; box-shadow: 0 0 0 2px rgba(78,138,112,.12) !important; color: #174b3b !important; }
+        .rt-type-chip { border-radius: 999px !important; padding: 7px 11px !important; border: 1px solid rgba(0,0,0,.14); font-size: 11px !important; }
+        .rt-type-chip.is-selected { outline: 2px solid #183b32; outline-offset: 2px; box-shadow: 0 0 0 4px rgba(78,138,112,.12) !important; }
         .rt-filter-controls { display: grid !important; grid-template-columns: minmax(220px,1.4fr) minmax(180px,1fr) minmax(160px,.8fr); gap: 16px !important; align-items: start; padding: 17px; border: 1px solid #e2eae5; border-radius: 14px; background: #f9fbfa; }
         .rt-filter-controls label { display: block; margin-bottom: 7px; color: #506456; font-size: 11px; font-weight: 700; }
         .rt-search-field input, .rt-multi-select { width: 100%; }
@@ -1961,8 +1970,10 @@ const delayedReleases = baseFiltered.filter(r => {
         .rt-month-grid { grid-template-columns: repeat(auto-fit, minmax(255px, 1fr)) !important; gap: 14px !important; }
         .rt-month-card { min-width: 0; padding: 15px !important; border: 1px solid #e2eae5 !important; border-radius: 13px; background: #fff; box-shadow: 0 3px 12px rgba(28,55,43,.025); }
         .rt-month-card > strong { display: block; padding-bottom: 10px; border-bottom: 1px solid #edf1ee; color: #29483d; font-size: 13px; }
-        .rt-release-card { margin-top: 9px !important; padding: 12px 13px !important; border: 1px solid #e5ece8 !important; border-left-width: 4px !important; border-radius: 9px; background: #fbfcfb !important; color: #263b32 !important; }
+        .rt-release-card { margin-top: 9px !important; padding: 12px 13px !important; border: 1px solid #e5ece8; border-left-width: 4px; border-radius: 9px; color: #263b32 !important; }
         .rt-release-card > strong { display: block; margin-bottom: 5px; color: #203d31; font-size: 13px; }
+        .rt-release-card-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 9px; }
+        .rt-release-type-tag { display: inline-flex; align-items: center; width: fit-content; padding: 3px 8px; border: 1px solid; border-radius: 999px; font-size: 10px; font-weight: 750; line-height: 1.35; white-space: nowrap; }
         .rt-release-card > div { margin-top: 4px; color: #718096; font-size: 11px !important; line-height: 1.45; }
         .rt-release-card button { padding: 5px 9px !important; font-size: 11px !important; }
         .rt-release-card button:last-child { color: #b54747 !important; }
@@ -2001,7 +2012,7 @@ const delayedReleases = baseFiltered.filter(r => {
         .rt-exec-kpi-card > div:nth-child(3) { color: #718096; font-size: 11px !important; line-height: 1.5; }
         .rt-exec-kpi-clickable { cursor: pointer; }
         .rt-exec-delayed-panel { border: 1px solid #e2eae5 !important; border-radius: 14px !important; padding: 18px !important; background: #fff !important; box-shadow: 0 3px 12px rgba(28,55,43,.025); }
-        .rt-exec-delayed-panel > div > div { border-color: #e2eae5 !important; border-radius: 10px !important; }
+        .rt-exec-delayed-panel > div > .rt-exec-delayed-release-card { border-radius: 10px !important; }
         .rt-exec-product-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important; gap: 14px !important; }
         .rt-exec-product-card { min-width: 0; padding: 16px !important; border: 1px solid #e2eae5 !important; border-radius: 13px; background: #fff; box-shadow: 0 3px 12px rgba(28,55,43,.03); }
         .rt-exec-product-card > strong { display: block; margin-bottom: 6px; color: #29483d; font-size: 13px; }
