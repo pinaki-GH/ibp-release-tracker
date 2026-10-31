@@ -539,8 +539,61 @@ const delayedReleases = baseFiltered.filter(r => {
   });
 
   return (
-    <div style={{ padding: 24, fontFamily: "Arial, sans-serif" }}>
-      <h1>IBP Release Tracker</h1>
+    <div id="release-tracker-app" className="rt-app">
+      <style jsx global>{`
+        #release-tracker-app {
+          --rt-ink: #172b3a;
+          --rt-muted: #64748b;
+          --rt-green: #176b52;
+          --rt-green-dark: #115440;
+          --rt-green-soft: #e8f3ee;
+          --rt-canvas: #f4f7f6;
+          --rt-line: #e1e9e5;
+          color: var(--rt-ink);
+          background: var(--rt-canvas);
+          min-height: 100vh;
+          padding: 32px clamp(16px, 3vw, 44px) 48px;
+          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-size: 14px;
+          line-height: 1.5;
+        }
+        #release-tracker-app * { box-sizing: border-box; }
+        #release-tracker-app .rt-header {
+          max-width: 1500px; margin: 0 auto 24px; display: flex;
+          align-items: flex-end; justify-content: space-between; gap: 18px; flex-wrap: wrap;
+        }
+        #release-tracker-app .rt-eyebrow { color: var(--rt-green); font-size: 11px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; margin-bottom: 5px; }
+        #release-tracker-app h1 { color: var(--rt-ink); font-size: clamp(26px, 3vw, 34px); line-height: 1.15; letter-spacing: -.035em; margin: 0; font-weight: 750; }
+        #release-tracker-app .rt-subtitle { color: var(--rt-muted); margin: 7px 0 0; font-size: 14px; }
+        #release-tracker-app .rt-nav { max-width: 1500px; margin: 0 auto 24px; display: flex; gap: 6px; border-bottom: 1px solid var(--rt-line); }
+        #release-tracker-app .rt-nav button { border: 0 !important; border-radius: 9px 9px 0 0 !important; background: transparent !important; color: var(--rt-muted) !important; padding: 11px 18px !important; font-weight: 650; box-shadow: none !important; }
+        #release-tracker-app .rt-nav button[aria-current="page"] { color: var(--rt-green-dark) !important; background: #e8f3ee !important; box-shadow: inset 0 -2px 0 var(--rt-green) !important; }
+        #release-tracker-app > :not(style) { max-width: 1500px; }
+        #release-tracker-app h2 { color: var(--rt-ink); font-size: 21px; letter-spacing: -.02em; margin-bottom: 14px; }
+        #release-tracker-app h3 { color: var(--rt-ink); }
+        #release-tracker-app button { cursor: pointer; border: 1px solid #cbd8d1; border-radius: 8px; background: #fff; color: #29483d; padding: 8px 12px; font: inherit; font-weight: 600; transition: background .15s ease, border-color .15s ease, transform .15s ease; }
+        #release-tracker-app button:hover:not(:disabled) { border-color: #8bb5a2; background: #f2f8f5; }
+        #release-tracker-app button:disabled { cursor: default; opacity: .55; }
+        #release-tracker-app input, #release-tracker-app select, #release-tracker-app textarea { border: 1px solid #d5dfda; border-radius: 8px; background: #fff; color: var(--rt-ink); padding: 9px 11px; font: inherit; min-height: 38px; }
+        #release-tracker-app input:focus, #release-tracker-app select:focus, #release-tracker-app textarea:focus { outline: 3px solid rgba(23,107,82,.13); border-color: #4d987b; }
+        #release-tracker-app [style*="border: 1px solid #ccc"] { border-color: var(--rt-line) !important; border-radius: 12px; background-color: #fff; }
+        #release-tracker-app [style*="repeat(5, 1fr)"] { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important; }
+        #release-tracker-app [style*="repeat(3, 1fr)"] { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important; }
+        #release-tracker-app [style*="repeat(2, 1fr)"] { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important; }
+        @media (max-width: 640px) {
+          #release-tracker-app { padding: 22px 14px 32px; }
+          #release-tracker-app .rt-nav { overflow-x: auto; }
+          #release-tracker-app .rt-nav button { white-space: nowrap; padding: 10px 12px !important; }
+          #release-tracker-app select[multiple] { max-width: calc(100vw - 36px); }
+        }
+      `}</style>
+      <header className="rt-header">
+        <div>
+          <div className="rt-eyebrow">Product delivery workspace</div>
+          <h1>IBP Release Tracker</h1>
+          <p className="rt-subtitle">Plan releases, monitor delivery progress, and keep teams aligned.</p>
+        </div>
+      </header>
 
       {storageError && (
         <div
@@ -558,23 +611,11 @@ const delayedReleases = baseFiltered.filter(r => {
         </div>
       )}
 
-      {/* View Toggle */}
-      <div style={{ marginBottom: 16 }}>
-        <button
-          disabled={viewMode === "tracker"}
-          onClick={() => setViewMode("tracker")}
-        >
-          Tracker View
-        </button>
-
-        <button
-          disabled={viewMode === "executive"}
-          onClick={() => setViewMode("executive")}
-          style={{ marginLeft: 8 }}
-        >
-          Executive View
-        </button>
-      </div>
+      {/* Primary navigation */}
+      <nav className="rt-nav" aria-label="Main navigation">
+        <button type="button" aria-current={viewMode === "tracker" ? "page" : undefined} onClick={() => setViewMode("tracker")}>Release Tracker</button>
+        <button type="button" aria-current={viewMode === "executive" ? "page" : undefined} onClick={() => setViewMode("executive")}>Executive Insights</button>
+      </nav>
 
       {viewMode === "tracker" && (
         <>
