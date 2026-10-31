@@ -1,0 +1,182 @@
+ "use client";
+
+import { useState } from "react";
+
+interface MonthEndReportingProps {
+  selectedYear: number;
+  productFilter: string[];
+  monthFilter: number[];
+  availableProducts: string[];
+  viewMode: "tracker" | "executive";
+  setViewMode: (mode: "tracker" | "executive") => void;
+  setMonthFilter: (months: number[]) => void;
+  disabled?: boolean;
+}
+
+/**
+ * Standalone month-end reporting feature.
+ * Captures the four existing tracker sections and packages four PNGs plus
+ * a four-page PDF into one ZIP download.
+ */
+export default function MonthEndReporting({
+  selectedYear,
+  productFilter,
+  monthFilter,
+  availableProducts,
+  viewMode,
+  setViewMode,
+  setMonthFilter,
+  disabled = false
+}: MonthEndReportingProps) {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const generate = async () => {
+    if (isGenerating || disabled) return;
+    const originalViewMode = viewMode;
+    const originalMonthFilter = [...monthFilter];
+    const selectedProducts = productFilter.length ? [...productFilter] : [...availableProducts];
+    const selectedMonths = originalMonthFilter.length ? originalMonthFilter.map(i => MONTHS[i]) : [...MONTHS];
+
+    setIsGenerating(true);
+    setError(null);
+
+    const waitForPaint = () => new Promise<void>(resolve => {
+      requestAnimationFrame(() => requestAnimationFrame(resolve));
+    });
+
+    const captureSection = async (elementId: string, title: string, subtitle: string, html2canvas: any) => {
+      const element = document.getElementById(elementId);
+      if (!element) throw new Error(`Could not find the ${title} report section.`);
+      const captured = await html2canvas(element, {
+        scale: 2,
+        backgroundColor: "#F4F8FC",
+        useCORS: true,
+        logging: false,
+        windowWidth: Math.max(document.documentElement.clientWidth, element.scrollWidth),
+        scrollX: 0,
+        scrollY: -window.scrollY
+      });
+      const output = document.createElement("canvas");
+      const headerHeight = 132;
+      output.width = captured.width;
+      output.height = captured.height + headerHeight;
+      const context = output.getContext("2d");
+      if (!context) throw new Error("Could not prepare the report image.");
+      context.fillStyle = "#FFFFFF";
+      context.fillRect(0, 0, output.width, output.height);
+      context.fillStyle = "#013F6A";
+      context.fillRect(0, 0, output.width, headerHeight);
+      context.fillStyle = "#FFFFFF";
+      context.font = "700 34px Arial";
+      context.fillText(title, 34, 44);
+      context.font = "20px Arial";
+      context.fillText(`IBP Release Tracker | Reporting year ${selectedYear}`, 34, 78);
+      context.font = "16px Arial";
+      context.fillText(subtitle, 34, 110, output.width - 68);
+      context.drawImage(captured, 0, headerHeight);
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        output.toBlob(result => result ? resolve(result) : reject(new Error("Could not export PNG.")), "image/png")
+      );
+      return { blob, dataUrl: output.toDataURL("image/png"), width: output.width, height: output.height };
+    };
+
+    try {
+      const [{ default: html2canvas }, { jsPDF }, { default: JSZip }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+        import("jszip")
+      ]);
+
+      setViewMode("executive");
+      await waitForPaint();
+      const productLabel = selectedProducts.length ? selectedProducts.join(", ") : "All products";
+      const monthLabel = selectedMonths.length ? selectedMonths.join(", ") : "All months";
+      const executiveSubtitle = `Products: ${productLabel} | Months: ${monthLabel}`;
+      const images = [];
+      images.push(await captureSection("report-monthly-summary", "Monthly Executive Summary", executiveSubtitle, html2canvas));
+      images.push(await captureSection("report-delivery-efficiency", "Delivery Efficiency", executiveSubtitle, html2canvas));
+      images.push(await captureSection("report-product-mix", "Product Release Mix", executiveSubtitle, html2canvas));
+
+      setViewMode("tracker");
+      setMonthFilter([]);
+      await waitForPaint();
+      images.push(await captureSection(
+        "report-monthly-schedule",
+        "Monthly Schedule",
+        `Products: ${productLabel} | All 12 months`,
+        html2canvas
+      ));
+
+      const pdf = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4", compress: true });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      images.forEach((img: { dataUrl: string; width: number; height: number }, index: number) => {
+        if (index) pdf.addPage("a4", "landscape");
+        const margin = 24;
+        const scale = Math.min((pageWidth - margin * 2) / img.width, (pageHeight - margin * 2) / img.height);
+        const width = img.width * scale;
+        const height = img.height * scale;
+        pdf.addImage(img.dataUrl, "PNG", (pageWidth - width) / 2, (pageHeight - height) / 2, width, height, undefined, "FAST");
+      });
+
+      const zip = new JSZip();
+      const year = String(selectedYear);
+      const names = [
+        "01_Monthly_Executive_Summary.png",
+        "02_Delivery_Efficiency.png",
+        "03_Product_Release_Mix.png",
+        "04_Monthly_Schedule.png"
+      ];
+      images.forEach((img: { blob: Blob }, index: number) => zip.file(names[index], img.blob));
+      zip.file(`IBP_Month_End_Report_${year}.pdf`, pdf.output("blob"));
+      zip.file("Report_Filters.txt", [
+        `Reporting year: ${year}`,
+        `Products: ${productLabel}`,
+        `Executive View months: ${monthLabel}`,
+        "Monthly Schedule: all 12 months"
+      ].join("\n"));
+
+      const zipBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+      const url = URL.createObjectURL(zipBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `IBP_Month_End_Report_${year}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (generationError) {
+      console.error("Month-end report generation failed:", generationError);
+      setError(generationError instanceof Error ? generationError.message : "The month-end report could not be generated.");
+    } finally {
+      setViewMode(originalViewMode);
+      setMonthFilter(originalMonthFilter);
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        className="rt-report-button"
+        onClick={generate}
+        disabled={disabled || isGenerating}
+        title="Generate four PNG snapshots and a combined PDF"
+      >
+        {isGenerating ? "Generating report…" : "↓ Month-End Report"}
+      </button>
+      {error && (
+        <div role="alert" style={{ flexBasis: "100%", padding: 10, border: "1px solid #FCA5A5", borderRadius: 9, background: "#FEF2F2", color: "#991B1B", fontSize: 12 }}>
+          <strong>Month-end report:</strong> {error}
+        </div>
+      )}
+    </>
+  );
+}
+
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
