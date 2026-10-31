@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import MonthEndReporting from "./MonthEndReporting";
+import MonthEndReporting from "./MonthEndReporting.jsx";
 
 /* -----------------------------
    Static reference data
