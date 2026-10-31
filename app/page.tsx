@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import MonthEndReporting from "./MonthEndReporting";
 
 /* -----------------------------
    Static reference data
@@ -617,6 +618,16 @@ const delayedReleases = baseFiltered.filter(r => {
             <button className="rt-export-button" onClick={exportYearToExcel}>
               ↓ Export CSV
             </button>
+            <MonthEndReporting
+              selectedYear={selectedYear}
+              productFilter={productFilter}
+              monthFilter={monthFilter}
+              availableProducts={availableProducts}
+              viewMode={viewMode}
+              setViewMode={setViewMode}
+              setMonthFilter={setMonthFilter}
+              disabled={!hasLoadedReleases || Boolean(storageError)}
+            />
           </div>
 
           {/* Data Quality Summary — checks all years and ignores view filters. */}
@@ -1061,6 +1072,7 @@ const delayedReleases = baseFiltered.filter(r => {
           </div>
 
           {/* Results */}
+          <div id="report-monthly-schedule">
           <div className="rt-results-heading">
             <div>
               <div className="rt-eyebrow">RELEASE SCHEDULE</div>
@@ -1245,12 +1257,14 @@ const delayedReleases = baseFiltered.filter(r => {
               ))}
             </div>
           )}
+          </div>
         </div>
       )}
 
             {/* EXECUTIVE VIEW */}
       {viewMode === "executive" && (
         <div className="rt-executive">
+          <div id="report-monthly-summary">
           <div className="rt-exec-page-heading"><div className="rt-eyebrow">REPORTING OVERVIEW</div><h2 className="rt-page-section-title">Monthly Executive Summary</h2><p>Release activity, delivery performance and product mix for {selectedYear}.</p></div>
 
           {/* Executive Summary Status Filter */}
@@ -1405,9 +1419,11 @@ const delayedReleases = baseFiltered.filter(r => {
             })}
           </div>
 
+          </div>
 {/* =====================
    DELIVERY EFFICIENCY
    ===================== */}
+<div id="report-delivery-efficiency">
 <div className="rt-exec-section-heading"><div className="rt-eyebrow">PERFORMANCE</div><h2>Delivery Efficiency</h2><p>Completed and pending delivery outcomes for the selected reporting year.</p></div>
 
 {(() => {
@@ -1810,9 +1826,11 @@ const delayedReleases = baseFiltered.filter(r => {
 )}
            
            
+          </div>
           {/* =====================
              PRODUCT RELEASE MIX
              ===================== */}
+          <div id="report-product-mix">
           <div className="rt-exec-section-heading"><div className="rt-eyebrow">PORTFOLIO VIEW</div><h2>Product Release Mix</h2><p>Distribution of release types across products and applications.</p></div>
 
           {/* Product Mix Status Filter */}
@@ -1963,6 +1981,7 @@ const delayedReleases = baseFiltered.filter(r => {
               });
             })()}
           </div>
+          </div>
         </div>
       )}
       <style jsx global>{`
@@ -1986,6 +2005,12 @@ const delayedReleases = baseFiltered.filter(r => {
         .rt-year-toolbar select { min-width: 112px; font-weight: 700; }
         .rt-export-button { margin-left: auto; background: #013F6A !important; border-color: #013F6A !important; color: #fff !important; }
         .rt-export-button:hover { background: #075B9A !important; }
+        .rt-report-button { margin-left: 8px; background: #1174E6 !important; border-color: #1174E6 !important; color: #fff !important; }
+        .rt-report-button:hover:not(:disabled) { background: #075B9A !important; }
+        .rt-report-button:disabled { opacity: .65; cursor: wait; }
+        .rt-report-button { margin-left: 8px; background: #1174E6 !important; border-color: #1174E6 !important; color: #fff !important; }
+        .rt-report-button:hover:not(:disabled) { background: #075B9A !important; }
+        .rt-report-button:disabled { opacity: .65; cursor: wait; }
         .rt-quality-summary { border-radius: 12px !important; padding: 14px 16px !important; }
         .rt-form-panel, .rt-filter-panel { margin-bottom: 20px; padding: 20px; border: 1px solid #DCE7F1; border-radius: 15px; background: #fff; box-shadow: 0 4px 16px rgba(1,63,106,.045); }
         .rt-section-heading, .rt-legend-heading, .rt-results-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 17px; }
@@ -2090,6 +2115,7 @@ const delayedReleases = baseFiltered.filter(r => {
           .rt-section-heading, .rt-legend-heading, .rt-results-heading { align-items: flex-start; }
           .rt-year-toolbar { flex-wrap: wrap; }
           .rt-export-button { margin-left: 0; }
+          .rt-report-button { margin-left: 0; }
           .rt-executive > div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
           .rt-exec-filter-panel { align-items: flex-start; }
           .rt-exec-page-heading h2 { font-size: 21px; }
