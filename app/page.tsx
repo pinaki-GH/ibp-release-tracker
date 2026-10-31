@@ -382,7 +382,17 @@ export default function ReleaseTrackerApp() {
       issues.push("Release name is duplicated across the shared tracker (names must be globally unique across all years).");
     }
 
-    return { id: release.id, name: name || "Unnamed release", issues };
+    const effectiveDate = getEffectiveReleaseDate(release);
+    const effectiveYear = parseDateOnly(effectiveDate)?.getUTCFullYear();
+
+    return {
+      id: release.id,
+      name: name || "Unnamed release",
+      product: product || "Product / App not provided",
+      status: isCompleted ? "Completed" : "Planned",
+      effectiveYear: effectiveYear ?? "Year unavailable",
+      issues
+    };
   }).filter(item => item.issues.length > 0);
 
   const dataQualityIssueCount = dataQualityIssues.reduce(
@@ -462,6 +472,21 @@ export default function ReleaseTrackerApp() {
     status: "planned",
     delayReason: ""
   });
+};
+
+const startEditingRelease = (release: ReleaseItem) => {
+  setEditingRelease(release);
+  setForm({
+    name: release.name ?? "",
+    product: release.product ?? "",
+    plannedDate: release.plannedDate ?? "",
+    actualDate: release.actualDate || "",
+    type: release.type ?? "",
+    status: release.status === "completed" ? "completed" : "planned",
+    delayReason: release.delayReason || ""
+  });
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
 const discardEdit = () => {
@@ -610,7 +635,24 @@ const delayedReleases = baseFiltered.filter(r => {
               <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
                 {dataQualityIssues.map(item => (
                   <div key={item.id} style={{ background: "#FFFFFF", border: "1px solid #FECACA", borderRadius: 4, padding: 10 }}>
-                    <strong>{item.name}</strong>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+                      <div>
+                        <strong>{item.name}</strong>
+                        <div style={{ fontSize: 12, color: "#6B7280", marginTop: 3 }}>
+                          {item.product} • {item.status} • {item.effectiveYear}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const release = releases.find(r => r.id === item.id);
+                          if (release) startEditingRelease(release);
+                        }}
+                        style={{ fontSize: 12, whiteSpace: "nowrap" }}
+                      >
+                        Edit this release
+                      </button>
+                    </div>
                     <ul style={{ margin: "6px 0 0", paddingLeft: 20 }}>
                       {item.issues.map((issue, index) => (
                         <li key={`${item.id}-${index}`} style={{ fontSize: 12, marginTop: 3 }}>{issue}</li>
