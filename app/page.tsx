@@ -20,7 +20,7 @@ const releaseStatuses = [
   { id: "completed", name: "Completed", color: "#16A34A" }
 ];
 
-const PRODUCTS = [
+const DEFAULT_PRODUCTS = [
   "Air Freight Approval Tool",
   "DDPS",
   "Lead Time Check",
@@ -129,6 +129,18 @@ export default function ReleaseTrackerApp() {
   const [showDataQualityDetails, setShowDataQualityDetails] = useState(false);
 
   const storageKey = "releaseTracker:all";
+
+  /* Product options are derived from the starter list plus every product
+     already used by a saved release. New products therefore appear in all
+     product selectors automatically after the release is saved. */
+  const availableProducts = Array.from(
+    new Map(
+      [...DEFAULT_PRODUCTS, ...releases.map(release => release.product)]
+        .map(product => String(product ?? "").trim().replace(/\s+/g, " "))
+        .filter(Boolean)
+        .map(product => [product.toLocaleLowerCase(), product] as const)
+    ).values()
+  );
 
   /* Load the shared release list once. If it does not exist yet, consolidate
      legacy year-specific lists while retaining the old keys as backups. */
@@ -947,8 +959,8 @@ const delayedReleases = baseFiltered.filter(r => {
         <label>Products</label>
         <span className="rt-choice-count">{productFilter.length === 0 ? "All products" : `${productFilter.length} selected`}</span>
       </div>
-      <button type="button" className="rt-text-button" onClick={() => setProductFilter(productFilter.length === PRODUCTS.length ? [] : [...PRODUCTS])}>
-        {productFilter.length === PRODUCTS.length ? "Clear all" : "Select all"}
+      <button type="button" className="rt-text-button" onClick={() => setProductFilter(productFilter.length === availableProducts.length ? [] : [...availableProducts])}>
+        {productFilter.length === availableProducts.length ? "Clear all" : "Select all"}
       </button>
     </div>
     <input
@@ -960,7 +972,7 @@ const delayedReleases = baseFiltered.filter(r => {
       className="rt-choice-search"
     />
     <div className="rt-choice-options" role="group" aria-label="Filter by product">
-      {PRODUCTS.filter(product => product.toLocaleLowerCase().includes(productFilterSearch.trim().toLocaleLowerCase())).map(product => (
+      {availableProducts.filter(product => product.toLocaleLowerCase().includes(productFilterSearch.trim().toLocaleLowerCase())).map(product => (
         <label className="rt-choice-option" key={product}>
           <input
             type="checkbox"
@@ -970,7 +982,7 @@ const delayedReleases = baseFiltered.filter(r => {
           <span>{product}</span>
         </label>
       ))}
-      {PRODUCTS.filter(product => product.toLocaleLowerCase().includes(productFilterSearch.trim().toLocaleLowerCase())).length === 0 && (
+      {availableProducts.filter(product => product.toLocaleLowerCase().includes(productFilterSearch.trim().toLocaleLowerCase())).length === 0 && (
         <div className="rt-choice-empty">No matching products</div>
       )}
     </div>
