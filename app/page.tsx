@@ -115,6 +115,7 @@ export default function ReleaseTrackerApp() {
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<"planned" | "completed" | null>(null);
   const [monthFilter, setMonthFilter] = useState<number[]>([]);
+  const [productFilterSearch, setProductFilterSearch] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   const [viewMode, setViewMode] = useState<"tracker" | "executive">("tracker");
@@ -939,81 +940,83 @@ const delayedReleases = baseFiltered.filter(r => {
       onChange={e => setSearchQuery(e.target.value)}
     />
   </div>
-  {/* Product Filter */}
-  <div className="rt-multi-filter">
-    <label htmlFor="product-filter">Products</label>
-    <select
-      id="product-filter"
-      className="rt-multi-select"
-      multiple
-      value={productFilter}
-      onChange={e =>
-        setProductFilter(
-          Array.from(
-            e.target.selectedOptions,
-            option => option.value
-          )
-        )
-      }
-      style={{
-        minWidth: 260,
-        height: 120
-      }}
-    >
-      {[
-        "Air Freight Approval Tool",
-        "DDPS",
-        "Lead Time Check",
-        "Predictable Material Capability",
-        "Supplier Performance Card",
-        "Supply Visualization"
-      ].map(product => (
-        <option key={product} value={product}>
-          {product}
-        </option>
-      ))}
-    </select>
-
-    <div style={{ marginTop: 6 }}>
-      <button className="rt-text-button" onClick={() => setProductFilter([])}>
-        Clear products
+  {/* Product selector */}
+  <div className="rt-choice-panel rt-product-choice">
+    <div className="rt-choice-heading">
+      <div>
+        <label>Products</label>
+        <span className="rt-choice-count">{productFilter.length === 0 ? "All products" : `${productFilter.length} selected`}</span>
+      </div>
+      <button type="button" className="rt-text-button" onClick={() => setProductFilter(productFilter.length === PRODUCTS.length ? [] : [...PRODUCTS])}>
+        {productFilter.length === PRODUCTS.length ? "Clear all" : "Select all"}
       </button>
     </div>
+    <input
+      type="search"
+      aria-label="Find a product"
+      placeholder="Find a product…"
+      value={productFilterSearch}
+      onChange={e => setProductFilterSearch(e.target.value)}
+      className="rt-choice-search"
+    />
+    <div className="rt-choice-options" role="group" aria-label="Filter by product">
+      {PRODUCTS.filter(product => product.toLocaleLowerCase().includes(productFilterSearch.trim().toLocaleLowerCase())).map(product => (
+        <label className="rt-choice-option" key={product}>
+          <input
+            type="checkbox"
+            checked={productFilter.includes(product)}
+            onChange={e => setProductFilter(current => e.target.checked ? [...current, product] : current.filter(item => item !== product))}
+          />
+          <span>{product}</span>
+        </label>
+      ))}
+      {PRODUCTS.filter(product => product.toLocaleLowerCase().includes(productFilterSearch.trim().toLocaleLowerCase())).length === 0 && (
+        <div className="rt-choice-empty">No matching products</div>
+      )}
+    </div>
+    {productFilter.length > 0 && (
+      <div className="rt-selected-chips" aria-label="Selected products">
+        {productFilter.map(product => (
+          <button type="button" className="rt-selected-chip" key={product} onClick={() => setProductFilter(current => current.filter(item => item !== product))} aria-label={`Remove ${product}`}>
+            {product} <span aria-hidden="true">×</span>
+          </button>
+        ))}
+      </div>
+    )}
   </div>
 
-  {/* Month Filter */}
-  <div className="rt-multi-filter">
-    <label htmlFor="month-filter">Months</label>
-    <select
-      id="month-filter"
-      className="rt-multi-select"
-      multiple
-      value={monthFilter.map(String)}
-      onChange={e =>
-        setMonthFilter(
-          Array.from(
-            e.target.selectedOptions,
-            option => Number(option.value)
-          )
-        )
-      }
-      style={{
-        minWidth: 180,
-        height: 120
-      }}
-    >
-      {MONTHS.map((month, index) => (
-        <option key={month} value={index}>
-          {month}
-        </option>
-      ))}
-    </select>
-
-    <div style={{ marginTop: 6 }}>
-      <button className="rt-text-button" onClick={() => setMonthFilter([])}>
-        Clear months
+  {/* Month selector */}
+  <div className="rt-choice-panel rt-month-choice">
+    <div className="rt-choice-heading">
+      <div>
+        <label>Months</label>
+        <span className="rt-choice-count">{monthFilter.length === 0 ? "All months" : `${monthFilter.length} selected`}</span>
+      </div>
+      <button type="button" className="rt-text-button" onClick={() => setMonthFilter(monthFilter.length === MONTHS.length ? [] : MONTHS.map((_, index) => index))}>
+        {monthFilter.length === MONTHS.length ? "Clear all" : "Select all"}
       </button>
     </div>
+    <div className="rt-month-options" role="group" aria-label="Filter by month">
+      {MONTHS.map((month, index) => (
+        <label className={`rt-month-option ${monthFilter.includes(index) ? "is-selected" : ""}`} key={month}>
+          <input
+            type="checkbox"
+            checked={monthFilter.includes(index)}
+            onChange={e => setMonthFilter(current => e.target.checked ? [...current, index].sort((a, b) => a - b) : current.filter(item => item !== index))}
+          />
+          <span>{month}</span>
+        </label>
+      ))}
+    </div>
+    {monthFilter.length > 0 && (
+      <div className="rt-selected-chips" aria-label="Selected months">
+        {monthFilter.slice().sort((a, b) => a - b).map(index => (
+          <button type="button" className="rt-selected-chip" key={index} onClick={() => setMonthFilter(current => current.filter(item => item !== index))} aria-label={`Remove ${MONTHS[index]}`}>
+            {MONTHS[index]} <span aria-hidden="true">×</span>
+          </button>
+        ))}
+      </div>
+    )}
   </div>
 </div>
           </section>
@@ -1992,10 +1995,27 @@ const delayedReleases = baseFiltered.filter(r => {
         .rt-text-button { padding: 6px 9px !important; border: 0 !important; background: transparent !important; color: #1174E6 !important; font-size: 12px !important; }
         .rt-type-chip { border-radius: 999px !important; padding: 7px 11px !important; border: 1px solid rgba(1,63,106,.16); font-size: 11px !important; }
         .rt-type-chip.is-selected { outline: 2px solid #013F6A; outline-offset: 2px; box-shadow: 0 0 0 4px rgba(78,138,112,.12) !important; }
-        .rt-filter-controls { display: grid !important; grid-template-columns: minmax(220px,1.4fr) minmax(180px,1fr) minmax(160px,.8fr); gap: 16px !important; align-items: start; padding: 17px; border: 1px solid #DCE7F1; border-radius: 14px; background: #F7FAFD; }
-        .rt-filter-controls label { display: block; margin-bottom: 7px; color: #49677F; font-size: 11px; font-weight: 700; }
-        .rt-search-field input, .rt-multi-select { width: 100%; }
-        .rt-multi-select { min-width: 0 !important; height: 88px !important; padding: 5px !important; }
+        .rt-filter-controls { display: grid !important; grid-template-columns: minmax(220px,1.25fr) minmax(280px,1.25fr) minmax(250px,1fr); gap: 14px !important; align-items: stretch; padding: 17px; border: 1px solid #DCE7F1; border-radius: 14px; background: #F7FAFD; }
+        .rt-filter-controls label { display: block; color: #49677F; font-size: 11px; font-weight: 700; }
+        .rt-search-field input { width: 100%; }
+        .rt-choice-panel { min-width: 0; padding: 12px; border: 1px solid #DCE7F1; border-radius: 11px; background: #fff; }
+        .rt-choice-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 9px; }
+        .rt-choice-heading > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+        .rt-choice-heading label { margin: 0 !important; color: #174B78 !important; font-size: 12px !important; font-weight: 750 !important; }
+        .rt-choice-count { color: #718096; font-size: 10px; font-weight: 600; }
+        .rt-choice-search { width: 100%; min-height: 34px !important; margin-bottom: 8px; padding: 7px 9px !important; font-size: 12px !important; }
+        .rt-choice-options { display: grid; gap: 2px; max-height: 148px; overflow-y: auto; padding: 3px; }
+        .rt-choice-option { display: flex !important; align-items: center; gap: 8px; padding: 6px 7px; border-radius: 7px; color: #334E68 !important; font-size: 11px !important; font-weight: 500 !important; cursor: pointer; }
+        .rt-choice-option:hover { background: #F2F7FC; }
+        .rt-choice-option input, .rt-month-option input { width: 15px; height: 15px; min-height: 15px; margin: 0; accent-color: #1174E6; flex: 0 0 auto; }
+        .rt-choice-empty { padding: 12px 7px; color: #718096; font-size: 11px; }
+        .rt-month-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+        .rt-month-option { display: flex !important; align-items: center; gap: 7px; padding: 7px 8px; border: 1px solid transparent; border-radius: 7px; color: #49677F !important; font-size: 11px !important; font-weight: 500 !important; cursor: pointer; }
+        .rt-month-option:hover { background: #F2F7FC; }
+        .rt-month-option.is-selected { border-color: #B9D6F2; background: #EAF3FC; color: #013F6A !important; font-weight: 700 !important; }
+        .rt-selected-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; padding-top: 8px; border-top: 1px solid #EDF2F7; }
+        .rt-selected-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 7px !important; border: 1px solid #C7DDF2 !important; border-radius: 999px !important; background: #EFF6FD !important; color: #174B78 !important; font-size: 10px !important; font-weight: 600 !important; }
+        .rt-selected-chip span { color: #1174E6; font-size: 14px; line-height: 10px; }
         .rt-status-filter { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 15px 0 20px !important; }
         .rt-status-filter > strong { color: #49677F; font-size: 12px; }
         .rt-status-chip { border-radius: 999px !important; padding: 7px 13px !important; background: #fff !important; color: #49677F !important; border-color: #D8E4EF !important; }
@@ -2058,6 +2078,7 @@ const delayedReleases = baseFiltered.filter(r => {
           .rt-app h1 { font-size: 24px; }
           .rt-form-panel, .rt-filter-panel { padding: 15px; }
           .rt-filter-controls { grid-template-columns: 1fr !important; }
+          .rt-choice-options { max-height: 180px; }
           .rt-section-heading, .rt-legend-heading, .rt-results-heading { align-items: flex-start; }
           .rt-year-toolbar { flex-wrap: wrap; }
           .rt-export-button { margin-left: 0; }
