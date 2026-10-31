@@ -1232,16 +1232,18 @@ const delayedReleases = baseFiltered.filter(r => {
             {/* EXECUTIVE VIEW */}
       {viewMode === "executive" && (
         <div className="rt-executive">
-          <h2 className="rt-page-section-title">Monthly Executive Summary</h2>
+          <div className="rt-exec-page-heading"><div className="rt-eyebrow">REPORTING OVERVIEW</div><h2 className="rt-page-section-title">Monthly Executive Summary</h2><p>Release activity, delivery performance and product mix for {selectedYear}.</p></div>
 
           {/* Executive Summary Status Filter */}
-          <div style={{ marginBottom: 16 }}>
+          <div className="rt-exec-filter-panel" style={{ marginBottom: 16 }}>
             <strong>Release Status</strong>
 
             <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
               {releaseStatuses.map(rs => (
                 <button
                   key={rs.id}
+                  type="button"
+                  aria-pressed={executiveSummaryStatusFilter === rs.id}
                   onClick={() =>
                     setExecutiveSummaryStatusFilter(p =>
                       p === rs.id
@@ -1265,7 +1267,7 @@ const delayedReleases = baseFiltered.filter(r => {
             </div>
           </div>
 
-          <div
+          <div className="rt-exec-month-grid"
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(3, 1fr)",
@@ -1311,7 +1313,7 @@ const delayedReleases = baseFiltered.filter(r => {
                 .filter(t => t.count > 0);
 
               return (
-                <div
+                <div className="rt-exec-month-card"
                   key={month}
                   style={{
                     border: "1px solid #ccc",
@@ -1352,9 +1354,7 @@ const delayedReleases = baseFiltered.filter(r => {
 {/* =====================
    DELIVERY EFFICIENCY
    ===================== */}
-<h2 style={{ marginTop: 32 }}>
-  Delivery Efficiency
-</h2>
+<div className="rt-exec-section-heading"><div className="rt-eyebrow">PERFORMANCE</div><h2>Delivery Efficiency</h2><p>Completed and pending delivery outcomes for the selected reporting year.</p></div>
 
 {(() => {
   // Use a date-only key so KPI cutoffs are independent of browser timezone.
@@ -1437,7 +1437,7 @@ const delayedReleases = baseFiltered.filter(r => {
   };
 
   return (
-    <div
+    <div className="rt-exec-kpi-grid"
       style={{
         display: "grid",
         gridTemplateColumns: "repeat(5, 1fr)",
@@ -1447,7 +1447,7 @@ const delayedReleases = baseFiltered.filter(r => {
       }}
     >
       {/* Completion Rate */}
-      <div
+      <div className="rt-exec-kpi-card"
         style={{
           border: "1px solid #ccc",
           padding: 16,
@@ -1480,7 +1480,7 @@ const delayedReleases = baseFiltered.filter(r => {
       </div>
 
       {/* On-Time Delivery */}
-      <div
+      <div className="rt-exec-kpi-card"
         style={{
           border: "1px solid #ccc",
           padding: 16,
@@ -1513,7 +1513,7 @@ const delayedReleases = baseFiltered.filter(r => {
       </div>
 
       {/* Before-Time Releases */}
-      <div
+      <div className="rt-exec-kpi-card"
         style={{
           border: "1px solid #ccc",
           padding: 16,
@@ -1553,6 +1553,7 @@ const delayedReleases = baseFiltered.filter(r => {
         onClick={() =>
           setShowDelayedDetails(!showDelayedDetails)
         }
+        className="rt-exec-kpi-card rt-exec-kpi-clickable"
         style={{
           border: "1px solid #ccc",
           padding: 16,
@@ -1600,7 +1601,7 @@ const delayedReleases = baseFiltered.filter(r => {
       </div>
 
       {/* Pending Releases */}
-      <div
+      <div className="rt-exec-kpi-card"
         style={{
           border: "1px solid #ccc",
           padding: 16,
@@ -1641,7 +1642,7 @@ const delayedReleases = baseFiltered.filter(r => {
 
 {showDelayedDetails &&
   delayedReleases.length > 0 && (
-    <div
+    <div className="rt-exec-delayed-panel"
       style={{
         marginTop: 24,
         marginBottom: 24,
@@ -1757,18 +1758,18 @@ const delayedReleases = baseFiltered.filter(r => {
           {/* =====================
              PRODUCT RELEASE MIX
              ===================== */}
-          <h2 style={{ marginTop: 32 }}>
-            Product Release Mix
-          </h2>
+          <div className="rt-exec-section-heading"><div className="rt-eyebrow">PORTFOLIO VIEW</div><h2>Product Release Mix</h2><p>Distribution of release types across products and applications.</p></div>
 
           {/* Product Mix Status Filter */}
-          <div style={{ marginBottom: 16 }}>
+          <div className="rt-exec-filter-panel" style={{ marginBottom: 16 }}>
             <strong>Release Status</strong>
 
             <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
               {releaseStatuses.map(rs => (
                 <button
                   key={rs.id}
+                  type="button"
+                  aria-pressed={productMixStatusFilter === rs.id}
                   onClick={() =>
                     setProductMixStatusFilter(p =>
                       p === rs.id
@@ -1792,7 +1793,7 @@ const delayedReleases = baseFiltered.filter(r => {
             </div>
           </div>
 
-          <div
+          <div className="rt-exec-product-grid"
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(2, 1fr)",
@@ -1837,7 +1838,7 @@ const delayedReleases = baseFiltered.filter(r => {
                   .filter(t => t.count > 0);
 
                 return (
-                  <div
+                  <div className="rt-exec-product-card"
                     key={product}
                     style={{
                       border: "1px solid #ccc",
@@ -1975,7 +1976,38 @@ const delayedReleases = baseFiltered.filter(r => {
         .rt-executive [style*="grid-template-columns: repeat(5"] { grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)) !important; }
         .rt-executive [style*="border: 1px solid #ccc"] { border: 1px solid #e2eae5 !important; border-radius: 13px !important; background: #fff; box-shadow: 0 3px 12px rgba(28,55,43,.035); }
         .rt-executive [style*="cursor: pointer"] { transition: transform .15s ease, box-shadow .15s ease; }
-        .rt-executive [style*="cursor: pointer"]:hover { transform: translateY(-2px); box-shadow: 0 7px 18px rgba(28,55,43,.08) !important; }
+        .rt-executive { display: block; }
+        .rt-exec-page-heading { margin: 4px 0 20px; padding: 2px 0 16px; border-bottom: 1px solid #e2eae5; }
+        .rt-exec-page-heading h2 { margin: 0; font-size: 23px; }
+        .rt-exec-page-heading p, .rt-exec-section-heading p { margin: 6px 0 0; color: #718096; font-size: 12px; }
+        .rt-exec-filter-panel { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 14px 16px; border: 1px solid #e2eae5; border-radius: 13px; background: #fff; box-shadow: 0 3px 12px rgba(28,55,43,.025); }
+        .rt-exec-filter-panel > strong { color: #506456; font-size: 12px; }
+        .rt-exec-filter-panel > div { margin-top: 0 !important; }
+        .rt-exec-filter-panel button { border-radius: 999px !important; padding: 7px 13px !important; background: #fff !important; border: 1px solid #dce5e0 !important; color: #52665b !important; }
+        .rt-exec-filter-panel button[aria-pressed="true"] { background: #e8f2ec !important; border-color: #4e8a70 !important; color: #174b3b !important; }
+        .rt-exec-month-grid { grid-template-columns: repeat(auto-fit, minmax(245px, 1fr)) !important; gap: 14px !important; }
+        .rt-exec-month-card { min-width: 0; padding: 16px !important; border: 1px solid #e2eae5 !important; border-radius: 13px; background: #fff; box-shadow: 0 3px 12px rgba(28,55,43,.03); }
+        .rt-exec-month-card > strong { display: block; margin-bottom: 5px; color: #29483d; font-size: 14px; }
+        .rt-exec-month-card > div:nth-child(2) { color: #718096; font-size: 11px; }
+        .rt-exec-month-card > div[style*="margin-top: 6px"] { padding-top: 8px; border-top: 1px solid #edf1ee; }
+        .rt-exec-month-card > div[style*="margin-top: 6px"] > div:first-child { margin-bottom: 5px; color: #506456; font-size: 11px !important; }
+        .rt-exec-month-card > div[style*="background: rgb(238, 238, 238)"], .rt-exec-month-card > div[style*="background: #eee"] { overflow: hidden; border-radius: 999px; background: #edf2ee !important; }
+        .rt-exec-section-heading { margin: 30px 0 14px; }
+        .rt-exec-section-heading h2 { margin: 0; font-size: 20px; }
+        .rt-exec-kpi-grid { grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)) !important; gap: 14px !important; margin-top: 14px !important; }
+        .rt-exec-kpi-card { min-width: 0; border: 1px solid #e2eae5 !important; border-radius: 13px !important; padding: 17px !important; background: #fff; box-shadow: 0 3px 12px rgba(28,55,43,.035); }
+        .rt-exec-kpi-card > div:first-child { color: #718096 !important; font-size: 11px !important; font-weight: 700; letter-spacing: .01em; }
+        .rt-exec-kpi-card > div:nth-child(2) { font-size: 30px !important; line-height: 1.15; letter-spacing: -.04em; }
+        .rt-exec-kpi-card > div:nth-child(3) { color: #718096; font-size: 11px !important; line-height: 1.5; }
+        .rt-exec-kpi-clickable { cursor: pointer; }
+        .rt-exec-delayed-panel { border: 1px solid #e2eae5 !important; border-radius: 14px !important; padding: 18px !important; background: #fff !important; box-shadow: 0 3px 12px rgba(28,55,43,.025); }
+        .rt-exec-delayed-panel > div > div { border-color: #e2eae5 !important; border-radius: 10px !important; }
+        .rt-exec-product-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important; gap: 14px !important; }
+        .rt-exec-product-card { min-width: 0; padding: 16px !important; border: 1px solid #e2eae5 !important; border-radius: 13px; background: #fff; box-shadow: 0 3px 12px rgba(28,55,43,.03); }
+        .rt-exec-product-card > strong { display: block; margin-bottom: 6px; color: #29483d; font-size: 13px; }
+        .rt-exec-product-card > div:nth-child(2) { color: #718096; font-size: 11px !important; }
+        .rt-exec-product-card > div[style*="height: 16px"] { border: 0 !important; border-radius: 999px; }
+        .rt-exec-product-card > div:last-child { display: flex; flex-wrap: wrap; gap: 7px 12px; color: #718096; font-size: 10px !important; line-height: 1.6; }
         @media (max-width: 760px) {
           .rt-app { padding: 16px !important; }
           .rt-app h1 { font-size: 24px; }
@@ -1985,6 +2017,9 @@ const delayedReleases = baseFiltered.filter(r => {
           .rt-year-toolbar { flex-wrap: wrap; }
           .rt-export-button { margin-left: 0; }
           .rt-executive > div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+          .rt-exec-filter-panel { align-items: flex-start; }
+          .rt-exec-page-heading h2 { font-size: 21px; }
+          .rt-exec-section-heading { margin-top: 24px; }
         }
       `}</style>
     </div>
