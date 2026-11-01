@@ -48,22 +48,25 @@ export default function MonthEndReporting({
       });
       const output = document.createElement("canvas");
       const headerHeight = 132;
-      output.width = captured.width;
-      output.height = captured.height + headerHeight;
+      // 48px at the captured (2x) resolution gives a clean 24px visual
+      // margin on every side of each exported PNG and its PDF page.
+      const outerMargin = 48;
+      output.width = captured.width + outerMargin * 2;
+      output.height = captured.height + headerHeight + outerMargin * 2;
       const context = output.getContext("2d");
       if (!context) throw new Error("Could not prepare the report image.");
       context.fillStyle = "#FFFFFF";
       context.fillRect(0, 0, output.width, output.height);
       context.fillStyle = "#013F6A";
-      context.fillRect(0, 0, output.width, headerHeight);
+      context.fillRect(outerMargin, outerMargin, captured.width, headerHeight);
       context.fillStyle = "#FFFFFF";
       context.font = "700 34px Arial";
-      context.fillText(title, 34, 44);
+      context.fillText(title, outerMargin + 34, outerMargin + 44);
       context.font = "20px Arial";
-      context.fillText(`IBP Release Tracker | Reporting year ${selectedYear}`, 34, 78);
+      context.fillText(`IBP Release Tracker | Reporting year ${selectedYear}`, outerMargin + 34, outerMargin + 78);
       context.font = "16px Arial";
-      context.fillText(subtitle, 34, 110, output.width - 68);
-      context.drawImage(captured, 0, headerHeight);
+      context.fillText(subtitle, outerMargin + 34, outerMargin + 110, captured.width - 68);
+      context.drawImage(captured, outerMargin, outerMargin + headerHeight);
       const blob = await new Promise((resolve, reject) =>
         output.toBlob(result => result ? resolve(result) : reject(new Error("Could not export PNG.")), "image/png")
       );
