@@ -30,7 +30,7 @@ export default function MonthEndReporting({
     setIsGenerating(true);
     setError(null);
 
-    const waitForPaint = () => new Promise<void>(resolve => {
+    const waitForPaint = () => new Promise(resolve => {
       requestAnimationFrame(() => requestAnimationFrame(resolve));
     });
 
@@ -64,7 +64,7 @@ export default function MonthEndReporting({
       context.font = "16px Arial";
       context.fillText(subtitle, 34, 110, output.width - 68);
       context.drawImage(captured, 0, headerHeight);
-      const blob = await new Promise<Blob>((resolve, reject) =>
+      const blob = await new Promise((resolve, reject) =>
         output.toBlob(result => result ? resolve(result) : reject(new Error("Could not export PNG.")), "image/png")
       );
       return { blob, dataUrl: output.toDataURL("image/png"), width: output.width, height: output.height };
