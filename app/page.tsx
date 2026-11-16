@@ -604,7 +604,7 @@ const delayedReleases = baseFiltered.filter(r => {
               marginBottom: 16
             }}
           >
-            <strong>Reporting year</strong>
+            <strong>Reporting Year</strong>
 
             <select
               value={selectedYear}
@@ -698,7 +698,7 @@ const delayedReleases = baseFiltered.filter(r => {
           <div className="rt-section-heading">
             <div>
               <div className="rt-eyebrow">RELEASE MANAGEMENT</div>
-              <h2>{editingRelease ? "Update release" : "Add a release"}</h2>
+              <h2>{editingRelease ? "Update release" : "Add Release"}</h2>
               <p>Capture the planned delivery and track its actual outcome.</p>
             </div>
             {editingRelease && <span className="rt-editing-pill">Editing existing release</span>}
@@ -884,7 +884,7 @@ const delayedReleases = baseFiltered.filter(r => {
           <div className="rt-legend-heading">
             <div>
               <div className="rt-eyebrow">BROWSE RELEASES</div>
-              <h2>Release type</h2>
+              <h2>Release Type</h2>
               <p>{totalYearCount} release(s) in {selectedYear}</p>
             </div>
 
@@ -1041,7 +1041,7 @@ const delayedReleases = baseFiltered.filter(r => {
           </section>
           {/* Status Filter */}
           <div className="rt-status-filter" style={{ marginBottom: 16 }}>
-            <strong>Release status</strong>
+            <strong>Release Status</strong>
 
             <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
               {releaseStatuses.map(rs => (
@@ -1076,7 +1076,7 @@ const delayedReleases = baseFiltered.filter(r => {
           <div className="rt-results-heading">
             <div>
               <div className="rt-eyebrow">RELEASE SCHEDULE</div>
-              <h2>{monthFilter.length === 1 ? `${MONTHS[monthFilter[0]]} ${selectedYear}` : `Monthly schedule · ${selectedYear}`}</h2>
+              <h2>{monthFilter.length === 1 ? `${MONTHS[monthFilter[0]]} ${selectedYear}` : `Monthly Schedule · ${selectedYear}`}</h2>
             </div>
             <span>{filteredReleases.length} matching release(s)</span>
           </div>
