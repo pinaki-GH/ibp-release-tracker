@@ -557,6 +557,10 @@ const delayedReleases = baseFiltered.filter(r => {
 
   return (
     <div className="rt-app" style={{ padding: 24, fontFamily: "Arial, sans-serif" }}>
+      <nav aria-label="Main navigation" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18, paddingBottom: 14, borderBottom: "1px solid #DCE6EF" }}>
+        <a href="/" aria-current="page" style={{ display: "inline-block", padding: "10px 16px", borderRadius: 9, background: "#013F6A", color: "#FFFFFF", textDecoration: "none", fontWeight: 700, fontSize: 14 }}>Release Tracker</a>
+        <a href="/product-register" style={{ display: "inline-block", padding: "10px 16px", borderRadius: 9, border: "1px solid #C8D8E6", background: "#FFFFFF", color: "#164D79", textDecoration: "none", fontWeight: 700, fontSize: 14 }}>Product &amp; App Register</a>
+      </nav>
       <h1>IBP Release Tracker</h1>
 
       {storageError && (
