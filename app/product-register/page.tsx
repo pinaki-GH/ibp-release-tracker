@@ -83,4 +83,18 @@ export default function ProductApplicationRegisterPage() {
     </section>
   </div></main>;
 }
-function DateCell({value,today}:{value:string;today:string}){if(!value)return <span className="muted">Not entered</span>;const c=classify(value,today);return c?<span className={`date ${c.tone}`} title={c.label} aria-label={`${fmt(value)}: ${c.label}`}>{fmt(value)}</span>:<span className="muted">Invalid date</span>;}
+function DateCell({value,today}:{value:string;today:string}) {
+  if (!value) return <span className="muted">Not entered</span>;
+  const c = classify(value,today);
+  if (!c) return <span className="muted">Invalid date</span>;
+  const dateColor = c.tone === "red" ? "#B45353" : c.tone === "amber" ? "#A87922" : "#39805D";
+  return (
+    <span
+      style={{ color: dateColor, fontWeight: 700 }}
+      title={c.label}
+      aria-label={`${fmt(value)}: ${c.label}`}
+    >
+      {fmt(value)}
+    </span>
+  );
+}
